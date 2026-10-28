@@ -87,6 +87,7 @@
             <Setter Property="Margin" Value="0" />
             <Setter Property="Width" Value="{Binding DataContext.ItemButtonWidth, RelativeSource={RelativeSource AncestorType=Window}}" />
             <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="AllowDrop" Value="True" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -94,9 +95,24 @@
                             <Grid.RenderTransform>
                                 <ScaleTransform x:Name="Scale" ScaleX="1.0" ScaleY="1.0" />
                             </Grid.RenderTransform>
+
+                            <!-- Drop Target Indicator Border -->
+                            <Border x:Name="DropHighlight"
+                                    BorderBrush="#38BDF8"
+                                    BorderThickness="2"
+                                    CornerRadius="10"
+                                    Margin="-2"
+                                    Visibility="Collapsed" />
+
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Grid>
                         <ControlTemplate.Triggers>
+                            <DataTrigger Binding="{Binding IsDropTarget}" Value="True">
+                                <Setter TargetName="DropHighlight" Property="Visibility" Value="Visible" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding IsBeingDragged}" Value="True">
+                                <Setter TargetName="ItemRoot" Property="Opacity" Value="0.35" />
+                            </DataTrigger>
                             <EventTrigger RoutedEvent="FrameworkElement.Loaded">
                                 <BeginStoryboard>
                                     <Storyboard>
@@ -172,7 +188,11 @@
                     <Button Style="{StaticResource DockItemButtonStyle}"
                             Click="OnDockItemClick"
                             ToolTip="{Binding Name}"
-                            PreviewMouseDown="OnDockItemPreviewMouseDown">
+                            PreviewMouseDown="OnDockItemPreviewMouseDown"
+                            PreviewMouseMove="OnDockItemPreviewMouseMove"
+                            DragOver="OnDockItemDragOver"
+                            DragLeave="OnDockItemDragLeave"
+                            Drop="OnDockItemDrop">
                         <Button.ContextMenu>
                             <ContextMenu Style="{StaticResource FluentContextMenu}">
                                 <!-- Header: App Name -->

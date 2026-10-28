@@ -69,8 +69,16 @@ public class NonActivatingWindow : Window
     /// </summary>
     public void PositionAtTopCenter(double offsetFromTop = 0)
     {
+        PositionAtTopCenter(Width, offsetFromTop);
+    }
+
+    /// <summary>
+    /// Repositions the window to the top-center of the primary monitor using the specified width.
+    /// </summary>
+    public void PositionAtTopCenter(double targetWidth, double offsetFromTop)
+    {
         double screenWidth = SystemParameters.PrimaryScreenWidth;
-        Left = Math.Round((screenWidth - Width) / 2.0);
+        Left = Math.Round((screenWidth - targetWidth) / 2.0);
         Top = Math.Round(offsetFromTop);
     }
 }

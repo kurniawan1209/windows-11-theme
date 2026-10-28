@@ -100,14 +100,18 @@ public class SettingsService : ISettingsService
                             needsSave = true;
                         }
 
-                        if (settings.Version != "1.7.0")
+                        if (settings.Version != "3.1.0")
                         {
-                            var taskbarApps = TaskbarShortcutHelper.GetWindowsTaskbarPinnedApps();
-                            if (taskbarApps.Count > 0)
+                            if (settings.Dock.PinnedApps.Count == 0)
                             {
-                                settings.Dock.PinnedApps = taskbarApps;
+                                var taskbarApps = TaskbarShortcutHelper.GetWindowsTaskbarPinnedApps();
+                                if (taskbarApps.Count > 0)
+                                {
+                                    settings.Dock.PinnedApps = taskbarApps;
+                                }
                             }
-                            settings.Version = "1.7.0";
+                            settings.Notch.ExpandOnHover = true;
+                            settings.Version = "3.1.0";
                             needsSave = true;
                         }
 

@@ -6,7 +6,7 @@ namespace CustomDesktop.Core.Models;
 public class AppSettings
 {
     [JsonPropertyName("Version")]
-    public string Version { get; set; } = "1.10.0";
+    public string Version { get; set; } = "3.1.0";
 
     [JsonPropertyName("Dock")]
     public DockSettings Dock { get; set; } = new();
@@ -117,7 +117,7 @@ public class NotchSettings
     public bool ShowMedia { get; set; } = true;
 
     [JsonPropertyName("ExpandOnHover")]
-    public bool ExpandOnHover { get; set; } = false;
+    public bool ExpandOnHover { get; set; } = true;
 
     [JsonPropertyName("BackdropType")]
     public string BackdropType { get; set; } = "Mica";

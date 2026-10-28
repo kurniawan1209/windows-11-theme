@@ -23,6 +23,8 @@ public class DockViewModel : ViewModelBase, IDisposable
     public double Opacity => _settingsService.CurrentSettings.Dock.Opacity;
     public double CornerRadius => _settingsService.CurrentSettings.Dock.CornerRadius;
     public bool ShowRunningIndicators => _settingsService.CurrentSettings.Dock.ShowRunningIndicators;
+    public bool AutoHide => _settingsService.CurrentSettings.Dock.AutoHide;
+    public int AutoHideDelayMs => _settingsService.CurrentSettings.Dock.AutoHideDelayMs;
     public bool EnableAnimations => _settingsService.CurrentSettings.System.EnableAnimations;
 
     public double ItemButtonWidth => IconSize + ItemGap;
@@ -67,6 +69,8 @@ public class DockViewModel : ViewModelBase, IDisposable
         OnPropertyChanged(nameof(Opacity));
         OnPropertyChanged(nameof(CornerRadius));
         OnPropertyChanged(nameof(ShowRunningIndicators));
+        OnPropertyChanged(nameof(AutoHide));
+        OnPropertyChanged(nameof(AutoHideDelayMs));
         OnPropertyChanged(nameof(EnableAnimations));
         OnPropertyChanged(nameof(CalculatedWidth));
         OnPropertyChanged(nameof(CalculatedHeight));
@@ -170,6 +174,61 @@ public class DockViewModel : ViewModelBase, IDisposable
         OnPropertyChanged(nameof(CalculatedWidth));
     }
 
+    public void ReorderPinnedApps(int oldIndex, int newIndex)
+    {
+        if (oldIndex < 0 || oldIndex >= Items.Count || newIndex < 0 || newIndex >= Items.Count || oldIndex == newIndex)
+        {
+            return;
+        }
+
+        var sourceItem = Items[oldIndex];
+        if (!sourceItem.IsPinned) return;
+
+        // Ensure target is within the pinned boundary
+        int pinnedCount = Items.Count(i => i.IsPinned);
+        if (newIndex >= pinnedCount)
+        {
+            newIndex = pinnedCount - 1;
+        }
+
+        Items.Move(oldIndex, newIndex);
+
+        // Synchronize and persist updated pinned order
+        _settingsService.UpdateSettings(settings =>
+        {
+            var orderedPinned = Items.Where(i => i.IsPinned).ToList();
+            var newPinnedConfigs = new List<PinnedAppConfig>();
+
+            foreach (var item in orderedPinned)
+            {
+                var existing = settings.Dock.PinnedApps.FirstOrDefault(p =>
+                    p.ExecutablePath.Equals(item.ExecutablePath, StringComparison.OrdinalIgnoreCase) ||
+                    p.Name.Equals(item.Name, StringComparison.OrdinalIgnoreCase));
+
+                if (existing != null)
+                {
+                    newPinnedConfigs.Add(new PinnedAppConfig
+                    {
+                        Name = existing.Name,
+                        ExecutablePath = existing.ExecutablePath,
+                        Arguments = existing.Arguments
+                    });
+                }
+                else
+                {
+                    newPinnedConfigs.Add(new PinnedAppConfig
+                    {
+                        Name = item.Name,
+                        ExecutablePath = item.ExecutablePath,
+                        Arguments = item.Arguments
+                    });
+                }
+            }
+
+            settings.Dock.PinnedApps = newPinnedConfigs;
+        });
+    }
+
     private void OnRunningAppsChanged(List<RunningAppInfo> runningApps)
     {
         Application.Current?.Dispatcher.InvokeAsync(() =>
@@ -188,7 +247,10 @@ public class DockViewModel : ViewModelBase, IDisposable
                 {
                     pinned.IsRunning = true;
                     pinned.WindowHandle = match.WindowHandle;
-                    pinned.WindowHandles = new List<IntPtr>(match.WindowHandles);
+                    if (!pinned.WindowHandles.SequenceEqual(match.WindowHandles))
+                    {
+                        pinned.WindowHandles = new List<IntPtr>(match.WindowHandles);
+                    }
                     matchedRunningPids.Add(match.ProcessId);
 
                     pinned.Icon ??= IconExtractor.GetIconForPath(match.ExecutablePath) ??
@@ -196,9 +258,12 @@ public class DockViewModel : ViewModelBase, IDisposable
                 }
                 else
                 {
-                    pinned.IsRunning = false;
-                    pinned.WindowHandle = IntPtr.Zero;
-                    pinned.WindowHandles.Clear();
+                    if (pinned.IsRunning)
+                    {
+                        pinned.IsRunning = false;
+                        pinned.WindowHandle = IntPtr.Zero;
+                        pinned.WindowHandles = new List<IntPtr>();
+                    }
                 }
             }
 
@@ -224,7 +289,10 @@ public class DockViewModel : ViewModelBase, IDisposable
                 if (existing != null)
                 {
                     // Update window handles without modifying item position
-                    existing.WindowHandles = new List<IntPtr>(active.WindowHandles);
+                    if (!existing.WindowHandles.SequenceEqual(active.WindowHandles))
+                    {
+                        existing.WindowHandles = new List<IntPtr>(active.WindowHandles);
+                    }
                     existing.WindowHandle = active.WindowHandle;
                     continue;
                 }

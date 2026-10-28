@@ -17,39 +17,577 @@
         Topmost="True"
         Background="Transparent">
 
-    <Grid x:Name="RootGrid" Margin="0">
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+
+        <!-- Top Navigation Icon Button Style -->
+        <Style x:Key="NavIconButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="#18FFFFFF" />
+            <Setter Property="Foreground" Value="#A1A1AA" />
+            <Setter Property="BorderBrush" Value="#25FFFFFF" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Width" Value="28" />
+            <Setter Property="Height" Value="28" />
+            <Setter Property="Margin" Value="3,0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Border" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="8">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Border" Property="Background" Value="#3038BDF8" />
+                                <Setter TargetName="Border" Property="BorderBrush" Value="#38BDF8" />
+                                <Setter Property="Foreground" Value="#38BDF8" />
+                            </Trigger>
+                            <Trigger Property="Tag" Value="Active">
+                                <Setter TargetName="Border" Property="Background" Value="#2238BDF8" />
+                                <Setter TargetName="Border" Property="BorderBrush" Value="#38BDF8" />
+                                <Setter Property="Foreground" Value="#38BDF8" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Media Playback Control Button -->
+        <Style x:Key="MediaControlButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="#25252A" />
+            <Setter Property="Foreground" Value="#F4F4F5" />
+            <Setter Property="BorderBrush" Value="#35FFFFFF" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="BtnBorder" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="8">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="BtnBorder" Property="Background" Value="#1DB954" />
+                                <Setter TargetName="BtnBorder" Property="BorderBrush" Value="#1DB954" />
+                                <Setter Property="Foreground" Value="#000000" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Modern Mini Slider Style -->
+        <Style x:Key="MiniSliderStyle" TargetType="Slider">
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Slider">
+                        <Grid VerticalAlignment="Center">
+                            <Track x:Name="PART_Track">
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Command="{x:Static Slider.DecreaseLarge}">
+                                        <RepeatButton.Template>
+                                            <ControlTemplate TargetType="RepeatButton">
+                                                <Border Height="4" Background="#38BDF8" CornerRadius="2" />
+                                            </ControlTemplate>
+                                        </RepeatButton.Template>
+                                    </RepeatButton>
+                                </Track.DecreaseRepeatButton>
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton Command="{x:Static Slider.IncreaseLarge}">
+                                        <RepeatButton.Template>
+                                            <ControlTemplate TargetType="RepeatButton">
+                                                <Border Height="4" Background="#3F3F46" CornerRadius="2" />
+                                            </ControlTemplate>
+                                        </RepeatButton.Template>
+                                    </RepeatButton>
+                                </Track.IncreaseRepeatButton>
+                                <Track.Thumb>
+                                    <Thumb>
+                                        <Thumb.Template>
+                                            <ControlTemplate TargetType="Thumb">
+                                                <Ellipse Width="12" Height="12" Fill="#FFFFFF" Stroke="#38BDF8" StrokeThickness="2">
+                                                    <Ellipse.Effect>
+                                                        <DropShadowEffect BlurRadius="4" ShadowDepth="1" Direction="270" Opacity="0.4" />
+                                                    </Ellipse.Effect>
+                                                </Ellipse>
+                                            </ControlTemplate>
+                                        </Thumb.Template>
+                                    </Thumb>
+                                </Track.Thumb>
+                            </Track>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Subtle Action Button Style -->
+        <Style x:Key="SubtleButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="#18FFFFFF" />
+            <Setter Property="Foreground" Value="#E4E4E7" />
+            <Setter Property="BorderBrush" Value="#25FFFFFF" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Border" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Border" Property="Background" Value="#2538BDF8" />
+                                <Setter TargetName="Border" Property="BorderBrush" Value="#38BDF8" />
+                                <Setter Property="Foreground" Value="#38BDF8" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Spotify Launch Button Style -->
+        <Style x:Key="SpotifyLaunchButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="#1DB954" />
+            <Setter Property="Foreground" Value="#000000" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Border" Background="{TemplateBinding Background}"
+                                CornerRadius="8" Padding="12,6">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Border" Property="Background" Value="#1ED760" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Grid x:Name="RootGrid" Margin="0" Background="Transparent" Cursor="Hand" MouseLeftButtonDown="OnRootGridMouseLeftButtonDown">
         <!-- 1. Background Layer: ONLY this receives Opacity -->
-        <Border CornerRadius="{Binding CornerRadiusValue, FallbackValue='0,0,16,16'}"
+        <Border x:Name="BackgroundBorder"
+                CornerRadius="{Binding CornerRadiusValue, FallbackValue='0,0,16,16'}"
                 Background="#000000"
                 Opacity="{Binding Opacity, FallbackValue=0.92}"
                 BorderBrush="#25FFFFFF"
                 BorderThickness="1">
             <Border.Effect>
-                <DropShadowEffect BlurRadius="16" ShadowDepth="3" Direction="270" Color="#000000" Opacity="0.6" />
+                <DropShadowEffect BlurRadius="18" ShadowDepth="4" Direction="270" Color="#000000" Opacity="0.65" />
             </Border.Effect>
         </Border>
 
-        <!-- 2. Foreground Content Layer: 100% Solid & Fully Opaque (Clock & Badges never fade) -->
-        <Grid VerticalAlignment="Center" Margin="14,0">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
-
-            <!-- Status indicator dot -->
-            <Ellipse Grid.Column="0" Width="7" Height="7" Fill="#10B981" Margin="0,0,8,0" />
-
-            <!-- Live Clock Display -->
-            <TextBlock x:Name="ClockText" Grid.Column="1" Text="12:00 PM"
-                       FontWeight="SemiBold" FontSize="12" Foreground="#FFFFFF"
-                       VerticalAlignment="Center" HorizontalAlignment="Center" />
-
-            <!-- Status Badges Preview -->
-            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="8,0,0,0">
-                <TextBlock Text="🔊" FontSize="10" Foreground="#A1A1AA" Margin="2,0" />
-                <TextBlock Text="⚡" FontSize="10" Foreground="#38BDF8" Margin="2,0" />
+        <!-- 2. Foreground Content Layer: 100% Solid & Fully Opaque -->
+        <!-- VIEW A: Compact Mode Content (Date & Time Only) -->
+        <Grid x:Name="CompactContentGrid" VerticalAlignment="Center" Margin="14,0" Opacity="1">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <TextBlock Text="{Binding DateStringCompact, FallbackValue='Wed, Oct 28'}"
+                           FontWeight="Medium" FontSize="11" Foreground="#A1A1AA"
+                           VerticalAlignment="Center" />
+                <TextBlock Text="•" FontSize="10" Foreground="#52525B" Margin="8,0" VerticalAlignment="Center" />
+                <TextBlock Text="{Binding TimeString, FallbackValue='12:00 PM'}"
+                           FontWeight="SemiBold" FontSize="12" Foreground="#FFFFFF"
+                           VerticalAlignment="Center" />
             </StackPanel>
+        </Grid>
+
+        <!-- VIEW B: Expanded Mode Content -->
+        <Grid x:Name="ExpandedContentGrid" Margin="14,10" Opacity="0" Visibility="Collapsed" Cursor="Arrow">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <!-- Top Row: Navigation Bar / Header -->
+            <Grid Grid.Row="0" Margin="0,0,0,10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Left: Status Dot + Time & Date -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Ellipse Width="7" Height="7" Fill="#10B981" Margin="0,0,6,0" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding TimeString, FallbackValue='12:00 PM'}"
+                               FontWeight="Bold" FontSize="13" Foreground="#FFFFFF" VerticalAlignment="Center" />
+                    <TextBlock Text="•" FontSize="10" Foreground="#52525B" Margin="5,0" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding DateStringCompact, FallbackValue='Oct 28'}"
+                               FontSize="11" FontWeight="Normal" Foreground="#A1A1AA" VerticalAlignment="Center" />
+                </StackPanel>
+
+                <!-- Right: Quick Action Navigation Icons Bar -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <!-- Media & Volume Tab Button -->
+                    <Button Command="{Binding SelectMediaTabCommand}" ToolTip="Volume &amp; Spotify">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource NavIconButtonStyle}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsMediaTabActive}" Value="True">
+                                        <Setter Property="Tag" Value="Active" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                        <TextBlock Text="🎵" FontSize="11" />
+                    </Button>
+
+                    <!-- Wi-Fi Tab Button -->
+                    <Button Command="{Binding SelectWifiTabCommand}" ToolTip="Wi-Fi Networks">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource NavIconButtonStyle}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsWifiTabActive}" Value="True">
+                                        <Setter Property="Tag" Value="Active" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                        <TextBlock Text="📶" FontSize="11" />
+                    </Button>
+
+                    <!-- Bluetooth Tab Button -->
+                    <Button Command="{Binding SelectBluetoothTabCommand}" ToolTip="Bluetooth Devices">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource NavIconButtonStyle}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsBluetoothTabActive}" Value="True">
+                                        <Setter Property="Tag" Value="Active" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                        <TextBlock Text="󰂯" FontSize="11" />
+                    </Button>
+
+                    <!-- Collapse Button -->
+                    <Button Style="{StaticResource NavIconButtonStyle}" Click="OnCollapseButtonClicked"
+                            ToolTip="Collapse Notch">
+                        <TextBlock Text="▲" FontSize="9" Foreground="#E4E4E7" />
+                    </Button>
+                </StackPanel>
+            </Grid>
+
+            <!-- Bottom Row: Dynamic Active Panel View -->
+            <Grid Grid.Row="1">
+                <!-- PANEL 1: Media & Volume View -->
+                <Grid Visibility="{Binding IsMediaTabActive, Converter={StaticResource BoolToVis}}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <!-- Master Volume Slider Row -->
+                    <Border Grid.Row="0" Background="#16161A" BorderBrush="#20FFFFFF" BorderThickness="1"
+                            CornerRadius="10" Padding="10,6" Margin="0,0,0,8">
+                        <Grid VerticalAlignment="Center">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="38" />
+                            </Grid.ColumnDefinitions>
+
+                            <Button Grid.Column="0" Style="{StaticResource SubtleButtonStyle}" Width="26" Height="26"
+                                    Command="{Binding ToggleMuteCommand}" ToolTip="Toggle Mute">
+                                <TextBlock Text="{Binding VolumeIcon}" FontSize="12" />
+                            </Button>
+
+                            <Slider Grid.Column="1" Style="{StaticResource MiniSliderStyle}"
+                                    Minimum="0" Maximum="100" Value="{Binding MasterVolumePercent}" Margin="10,0" />
+
+                            <TextBlock Grid.Column="2" Text="{Binding MasterVolumePercent, StringFormat='{}{0}%'}"
+                                       FontSize="11" FontWeight="Bold" Foreground="#38BDF8"
+                                       HorizontalAlignment="Right" VerticalAlignment="Center" />
+                        </Grid>
+                    </Border>
+
+                    <!-- Spotify Player Section -->
+                    <Border Grid.Row="1" Background="#16161A" BorderBrush="#20FFFFFF" BorderThickness="1"
+                            CornerRadius="10" Padding="12,10">
+                        <!-- Case A: Spotify is running -->
+                        <Grid>
+                            <Grid Visibility="{Binding IsSpotifyRunning, Converter={StaticResource BoolToVis}}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="64" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Album Thumbnail -->
+                                <Border Grid.Column="0" Width="54" Height="54" CornerRadius="8" Background="#24242A"
+                                        ClipToBounds="True" HorizontalAlignment="Left" VerticalAlignment="Center">
+                                    <Grid>
+                                        <TextBlock Text="🎵" FontSize="22" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                   Foreground="#71717A" />
+                                        <Image Source="{Binding MediaThumbnail}" Stretch="UniformToFill" />
+                                    </Grid>
+                                </Border>
+
+                                <!-- Track Details & Playback Controls -->
+                                <Grid Grid.Column="1" VerticalAlignment="Center" Margin="4,0,0,0">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+
+                                    <!-- Spotify Brand Tag & Title -->
+                                    <DockPanel Grid.Row="0" LastChildFill="False">
+                                        <TextBlock Text="SPOTIFY" FontSize="9" FontWeight="Bold" Foreground="#1DB954" />
+                                        <TextBlock Text="{Binding MediaTitle, FallbackValue='No Media Playing'}"
+                                                   FontWeight="SemiBold" FontSize="12" Foreground="#FFFFFF"
+                                                   TextTrimming="CharacterEllipsis" Margin="8,0,0,0" />
+                                    </DockPanel>
+
+                                    <TextBlock Grid.Row="1" Text="{Binding MediaArtist, FallbackValue='Spotify is idle'}"
+                                               FontSize="11" Foreground="#A1A1AA" TextTrimming="CharacterEllipsis" Margin="0,2,0,6" />
+
+                                    <!-- Media Control Buttons -->
+                                    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Left">
+                                        <Button Style="{StaticResource MediaControlButtonStyle}" Width="32" Height="26" Margin="0,0,6,0"
+                                                Command="{Binding PreviousTrackCommand}" ToolTip="Previous Track">
+                                            <TextBlock Text="⏮" FontSize="11" />
+                                        </Button>
+                                        <Button Style="{StaticResource MediaControlButtonStyle}" Width="38" Height="26" Margin="0,0,6,0"
+                                                Command="{Binding PlayPauseCommand}" ToolTip="Play / Pause">
+                                            <TextBlock Text="{Binding PlayPauseIcon, FallbackValue='▶'}" FontSize="11" />
+                                        </Button>
+                                        <Button Style="{StaticResource MediaControlButtonStyle}" Width="32" Height="26"
+                                                Command="{Binding NextTrackCommand}" ToolTip="Next Track">
+                                            <TextBlock Text="⏭" FontSize="11" />
+                                        </Button>
+                                    </StackPanel>
+                                </Grid>
+                            </Grid>
+
+                            <!-- Case B: Spotify is NOT running -->
+                            <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <Grid.Style>
+                                    <Style TargetType="Grid">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsSpotifyRunning}" Value="False">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Grid.Style>
+
+                                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,4">
+                                        <TextBlock Text="🎵" FontSize="14" Foreground="#1DB954" Margin="0,0,6,0" VerticalAlignment="Center" />
+                                        <TextBlock Text="Spotify is not running" FontWeight="SemiBold" FontSize="12" Foreground="#FFFFFF" />
+                                    </StackPanel>
+                                    <TextBlock Text="Launch Spotify to stream music and control playback"
+                                               FontSize="10" Foreground="#71717A" HorizontalAlignment="Center" Margin="0,0,0,8" />
+                                    <Button Style="{StaticResource SpotifyLaunchButtonStyle}"
+                                            Command="{Binding LaunchSpotifyCommand}" HorizontalAlignment="Center">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="▶" Margin="0,0,6,0" />
+                                            <TextBlock Text="Open Spotify" />
+                                        </StackPanel>
+                                    </Button>
+                                </StackPanel>
+                            </Grid>
+                        </Grid>
+                    </Border>
+                </Grid>
+
+                <!-- PANEL 2: Wi-Fi Networks View -->
+                <Grid Visibility="{Binding IsWifiTabActive, Converter={StaticResource BoolToVis}}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <!-- Wi-Fi Sub-Header -->
+                    <DockPanel Grid.Row="0" LastChildFill="False" Margin="0,0,0,6">
+                        <TextBlock Text="Available Wi-Fi Networks" FontWeight="SemiBold" FontSize="12" Foreground="#FFFFFF" VerticalAlignment="Center" />
+                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                            <Button Style="{StaticResource SubtleButtonStyle}" Padding="8,4" Margin="0,0,6,0"
+                                    Command="{Binding RefreshWifiCommand}" ToolTip="Scan Networks">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="&#xE72C;" FontFamily="Segoe MDL2 Assets" FontSize="10" Foreground="#38BDF8"
+                                               RenderTransformOrigin="0.5,0.5" Margin="0,0,5,0" VerticalAlignment="Center">
+                                        <TextBlock.RenderTransform>
+                                            <RotateTransform Angle="0" />
+                                        </TextBlock.RenderTransform>
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsWifiRefreshing}" Value="True">
+                                                        <DataTrigger.EnterActions>
+                                                            <BeginStoryboard x:Name="SpinWifiStory">
+                                                                <Storyboard RepeatBehavior="Forever">
+                                                                    <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)"
+                                                                                     From="0" To="360" Duration="0:0:0.75" />
+                                                                </Storyboard>
+                                                            </BeginStoryboard>
+                                                        </DataTrigger.EnterActions>
+                                                        <DataTrigger.ExitActions>
+                                                            <StopStoryboard BeginStoryboardName="SpinWifiStory" />
+                                                        </DataTrigger.ExitActions>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                    <TextBlock Text="Refresh" FontSize="10" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                            <Button Style="{StaticResource SubtleButtonStyle}" Padding="6,3"
+                                    Command="{Binding OpenNetworkFlyoutCommand}" ToolTip="Open Windows Network Flyout">
+                                <TextBlock Text="Network Flyout ↗" FontSize="10" Foreground="#38BDF8" />
+                            </Button>
+                        </StackPanel>
+                    </DockPanel>
+
+                    <!-- Networks List -->
+                    <Border Grid.Row="1" Background="#16161A" BorderBrush="#20FFFFFF" BorderThickness="1" CornerRadius="10" Padding="6">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                            <ItemsControl ItemsSource="{Binding AvailableWifiNetworks}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="#1C1C22" BorderBrush="#15FFFFFF" BorderThickness="1"
+                                                CornerRadius="6" Padding="8,6" Margin="0,2" Cursor="Hand">
+                                            <DockPanel LastChildFill="True">
+                                                <TextBlock Text="{Binding SignalGlyph}" FontFamily="Segoe MDL2 Assets" FontSize="12"
+                                                           Foreground="#FFFFFF" Margin="0,0,8,0" VerticalAlignment="Center" />
+                                                <TextBlock Text="{Binding SecurityGlyph}" FontFamily="Segoe MDL2 Assets" FontSize="11"
+                                                           Foreground="#E4E4E7" Margin="0,0,8,0" VerticalAlignment="Center" />
+                                                
+                                                <!-- Connected Tag if active -->
+                                                <Border DockPanel.Dock="Right" Background="#2010B981" CornerRadius="4" Padding="6,2"
+                                                        Visibility="{Binding IsConnected, Converter={StaticResource BoolToVis}}">
+                                                    <TextBlock Text="Connected" FontSize="9" FontWeight="Bold" Foreground="#10B981" />
+                                                </Border>
+
+                                                <TextBlock Text="{Binding Ssid}" FontSize="11" FontWeight="Medium" Foreground="#F4F4F5"
+                                                           TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                                            </DockPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Border>
+                </Grid>
+
+                <!-- PANEL 3: Bluetooth Devices View -->
+                <Grid Visibility="{Binding IsBluetoothTabActive, Converter={StaticResource BoolToVis}}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <!-- Bluetooth Sub-Header -->
+                    <DockPanel Grid.Row="0" LastChildFill="False" Margin="0,0,0,6">
+                        <TextBlock Text="Bluetooth Devices" FontWeight="SemiBold" FontSize="12" Foreground="#FFFFFF" VerticalAlignment="Center" />
+                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                            <Button Style="{StaticResource SubtleButtonStyle}" Padding="8,4" Margin="0,0,6,0"
+                                    Command="{Binding RefreshBluetoothCommand}" ToolTip="Refresh Devices">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="&#xE72C;" FontFamily="Segoe MDL2 Assets" FontSize="10" Foreground="#38BDF8"
+                                               RenderTransformOrigin="0.5,0.5" Margin="0,0,5,0" VerticalAlignment="Center">
+                                        <TextBlock.RenderTransform>
+                                            <RotateTransform Angle="0" />
+                                        </TextBlock.RenderTransform>
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsBluetoothRefreshing}" Value="True">
+                                                        <DataTrigger.EnterActions>
+                                                            <BeginStoryboard x:Name="SpinBTStory">
+                                                                <Storyboard RepeatBehavior="Forever">
+                                                                    <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)"
+                                                                                     From="0" To="360" Duration="0:0:0.75" />
+                                                                </Storyboard>
+                                                            </BeginStoryboard>
+                                                        </DataTrigger.EnterActions>
+                                                        <DataTrigger.ExitActions>
+                                                            <StopStoryboard BeginStoryboardName="SpinBTStory" />
+                                                        </DataTrigger.ExitActions>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                    <TextBlock Text="Refresh" FontSize="10" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                            <Button Style="{StaticResource SubtleButtonStyle}" Padding="6,3"
+                                    Command="{Binding OpenBluetoothSettingsCommand}" ToolTip="Open Windows Bluetooth Settings">
+                                <TextBlock Text="Add Device ↗" FontSize="10" Foreground="#38BDF8" />
+                            </Button>
+                        </StackPanel>
+                    </DockPanel>
+
+                    <!-- Bluetooth Devices List -->
+                    <Border Grid.Row="1" Background="#16161A" BorderBrush="#20FFFFFF" BorderThickness="1" CornerRadius="10" Padding="6">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                            <ItemsControl ItemsSource="{Binding BluetoothDevices}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="#1C1C22" BorderBrush="#15FFFFFF" BorderThickness="1"
+                                                CornerRadius="6" Padding="8,6" Margin="0,2" Cursor="Hand">
+                                            <DockPanel LastChildFill="True">
+                                                <TextBlock Text="{Binding DeviceIcon}" FontSize="12" Margin="0,0,8,0" VerticalAlignment="Center" />
+
+                                                <!-- Status Badge -->
+                                                <Border DockPanel.Dock="Right" CornerRadius="4" Padding="6,2">
+                                                    <Border.Style>
+                                                        <Style TargetType="Border">
+                                                            <Setter Property="Background" Value="#15FFFFFF" />
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsConnected}" Value="True">
+                                                                    <Setter Property="Background" Value="#2010B981" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+                                                    <TextBlock Text="{Binding StatusText}" FontSize="9" FontWeight="Bold">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Foreground" Value="#71717A" />
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding IsConnected}" Value="True">
+                                                                        <Setter Property="Foreground" Value="#10B981" />
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                </Border>
+
+                                                <TextBlock Text="{Binding Name}" FontSize="11" FontWeight="Medium" Foreground="#F4F4F5"
+                                                           TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                                            </DockPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Border>
+                </Grid>
+            </Grid>
         </Grid>
     </Grid>
 </base:NonActivatingWindow>

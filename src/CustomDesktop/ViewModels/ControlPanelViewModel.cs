@@ -45,6 +45,9 @@ public class ControlPanelViewModel : ViewModelBase
         OnPropertyChanged(nameof(NotchShowMedia));
         OnPropertyChanged(nameof(NotchWidthCompact));
         OnPropertyChanged(nameof(NotchHeightCompact));
+        OnPropertyChanged(nameof(NotchWidthExpanded));
+        OnPropertyChanged(nameof(NotchHeightExpanded));
+        OnPropertyChanged(nameof(NotchExpandOnHover));
         OnPropertyChanged(nameof(NotchMarginFromScreen));
         OnPropertyChanged(nameof(NotchOpacity));
         OnPropertyChanged(nameof(NotchOpacityPercent));
@@ -235,6 +238,45 @@ public class ControlPanelViewModel : ViewModelBase
             if (_settingsService.CurrentSettings.Notch.HeightCompact != value)
             {
                 _settingsService.UpdateSettings(s => s.Notch.HeightCompact = value);
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public int NotchWidthExpanded
+    {
+        get => _settingsService.CurrentSettings.Notch.WidthExpanded;
+        set
+        {
+            if (_settingsService.CurrentSettings.Notch.WidthExpanded != value)
+            {
+                _settingsService.UpdateSettings(s => s.Notch.WidthExpanded = value);
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public int NotchHeightExpanded
+    {
+        get => _settingsService.CurrentSettings.Notch.HeightExpanded;
+        set
+        {
+            if (_settingsService.CurrentSettings.Notch.HeightExpanded != value)
+            {
+                _settingsService.UpdateSettings(s => s.Notch.HeightExpanded = value);
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public bool NotchExpandOnHover
+    {
+        get => _settingsService.CurrentSettings.Notch.ExpandOnHover;
+        set
+        {
+            if (_settingsService.CurrentSettings.Notch.ExpandOnHover != value)
+            {
+                _settingsService.UpdateSettings(s => s.Notch.ExpandOnHover = value);
                 OnPropertyChanged();
             }
         }

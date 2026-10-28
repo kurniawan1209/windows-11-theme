@@ -251,31 +251,53 @@
 
                         <Separator Background="#27272A" Margin="0,0,0,14" />
 
-                        <!-- Row 1: Width & Height -->
-                        <TextBlock Text="NOTCH DIMENSIONS" FontSize="11" FontWeight="Bold" Foreground="#71717A" Margin="0,0,0,8" />
-                        <Grid Margin="0,0,0,14">
+                        <!-- Row 1: Dimensions -->
+                        <TextBlock Text="NOTCH DIMENSIONS (COMPACT &amp; EXPANDED)" FontSize="11" FontWeight="Bold" Foreground="#71717A" Margin="0,0,0,8" />
+                        <Grid Margin="0,0,0,10">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="24" />
+                                <ColumnDefinition Width="20" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="20" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="20" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
 
-                            <!-- Width Slider -->
+                            <!-- Width Slider (Compact) -->
                             <StackPanel Grid.Column="0">
                                 <DockPanel LastChildFill="False">
-                                    <TextBlock Text="Notch Width" FontSize="12" FontWeight="Medium" Foreground="#E4E4E7" />
+                                    <TextBlock Text="Compact Width" FontSize="12" FontWeight="Medium" Foreground="#E4E4E7" />
                                     <TextBlock Text="{Binding NotchWidthCompact, StringFormat='{}{0}px'}" FontSize="12" FontWeight="Bold" Foreground="#38BDF8" DockPanel.Dock="Right" />
                                 </DockPanel>
                                 <Slider Style="{StaticResource ModernSlider}" Minimum="140" Maximum="360" Value="{Binding NotchWidthCompact}" />
                             </StackPanel>
 
-                            <!-- Height Slider -->
+                            <!-- Height Slider (Compact) -->
                             <StackPanel Grid.Column="2">
                                 <DockPanel LastChildFill="False">
-                                    <TextBlock Text="Notch Height" FontSize="12" FontWeight="Medium" Foreground="#E4E4E7" />
+                                    <TextBlock Text="Compact Height" FontSize="12" FontWeight="Medium" Foreground="#E4E4E7" />
                                     <TextBlock Text="{Binding NotchHeightCompact, StringFormat='{}{0}px'}" FontSize="12" FontWeight="Bold" Foreground="#38BDF8" DockPanel.Dock="Right" />
                                 </DockPanel>
                                 <Slider Style="{StaticResource ModernSlider}" Minimum="28" Maximum="56" Value="{Binding NotchHeightCompact}" />
+                            </StackPanel>
+
+                            <!-- Width Slider (Expanded) -->
+                            <StackPanel Grid.Column="4">
+                                <DockPanel LastChildFill="False">
+                                    <TextBlock Text="Expanded Width" FontSize="12" FontWeight="Medium" Foreground="#E4E4E7" />
+                                    <TextBlock Text="{Binding NotchWidthExpanded, StringFormat='{}{0}px'}" FontSize="12" FontWeight="Bold" Foreground="#38BDF8" DockPanel.Dock="Right" />
+                                </DockPanel>
+                                <Slider Style="{StaticResource ModernSlider}" Minimum="320" Maximum="600" Value="{Binding NotchWidthExpanded}" />
+                            </StackPanel>
+
+                            <!-- Height Slider (Expanded) -->
+                            <StackPanel Grid.Column="6">
+                                <DockPanel LastChildFill="False">
+                                    <TextBlock Text="Expanded Height" FontSize="12" FontWeight="Medium" Foreground="#E4E4E7" />
+                                    <TextBlock Text="{Binding NotchHeightExpanded, StringFormat='{}{0}px'}" FontSize="12" FontWeight="Bold" Foreground="#38BDF8" DockPanel.Dock="Right" />
+                                </DockPanel>
+                                <Slider Style="{StaticResource ModernSlider}" Minimum="160" Maximum="400" Value="{Binding NotchHeightExpanded}" />
                             </StackPanel>
                         </Grid>
 
@@ -319,7 +341,7 @@
                         </Grid>
 
                         <!-- Sub-features -->
-                        <TextBlock Text="NOTCH MODULES" FontSize="11" FontWeight="Bold" Foreground="#71717A" Margin="0,8,0,6" />
+                        <TextBlock Text="NOTCH MODULES &amp; BEHAVIORS" FontSize="11" FontWeight="Bold" Foreground="#71717A" Margin="0,8,0,6" />
                         <WrapPanel Orientation="Horizontal">
                             <CheckBox Content="Show Live Clock" IsChecked="{Binding NotchShowClock}" Style="{StaticResource ModernToggleCheckBox}" Width="180" />
                             <CheckBox Content="Sound &amp; Volume Slider" IsChecked="{Binding NotchShowSound}" Style="{StaticResource ModernToggleCheckBox}" Width="180" />
@@ -327,6 +349,7 @@
                             <CheckBox Content="Network Status" IsChecked="{Binding NotchShowNetwork}" Style="{StaticResource ModernToggleCheckBox}" Width="180" />
                             <CheckBox Content="Bluetooth Status" IsChecked="{Binding NotchShowBluetooth}" Style="{StaticResource ModernToggleCheckBox}" Width="180" />
                             <CheckBox Content="Media Controls (GSMTC)" IsChecked="{Binding NotchShowMedia}" Style="{StaticResource ModernToggleCheckBox}" Width="180" />
+                            <CheckBox Content="Expand on Hover (Mouse enter)" IsChecked="{Binding NotchExpandOnHover}" Style="{StaticResource ModernToggleCheckBox}" Width="240" />
                         </WrapPanel>
                     </StackPanel>
                 </Border>

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -24,6 +25,7 @@ public class RunningAppsService : IDisposable
     private readonly DispatcherTimer _debounceTimer;
     private readonly uint _currentProcessId;
     private readonly User32.WinEventDelegate _winEventDelegate;
+    private readonly ConcurrentDictionary<uint, (string ProcessName, string ExePath)> _processInfoCache = new();
     private IntPtr _hookCreateDestroy;
     private IntPtr _hookForeground;
     private bool _isDisposed;
@@ -121,16 +123,26 @@ public class RunningAppsService : IDisposable
     {
         var runningApps = new List<RunningAppInfo>();
         var appByKey = new Dictionary<string, RunningAppInfo>(StringComparer.OrdinalIgnoreCase);
+        var activePids = new HashSet<uint>();
 
         User32.EnumWindows((hWnd, lParam) =>
         {
             if (!User32.IsWindowVisible(hWnd)) return true;
+
+            // Filter out DWM cloaked windows (suspended UWP, background virtual desktop windows)
+            if (DwmApi.IsWindowCloaked(hWnd)) return true;
 
             int length = User32.GetWindowTextLength(hWnd);
             if (length == 0) return true;
 
             long exStyle = User32.GetWindowLongPtr(hWnd, User32.GWL_EXSTYLE).ToInt64();
             if ((exStyle & User32.WS_EX_TOOLWINDOW) != 0) return true;
+
+            // Check non-zero dimensions to exclude hidden message or stub windows
+            if (!User32.GetWindowRect(hWnd, out var rect) || rect.Width <= 0 || rect.Height <= 0)
+            {
+                return true;
+            }
 
             User32.GetWindowThreadProcessId(hWnd, out uint pid);
             if (pid == 0) return true;
@@ -151,11 +163,23 @@ public class RunningAppsService : IDisposable
 
             try
             {
-                using var proc = Process.GetProcessById((int)pid);
-                string procName = proc.ProcessName;
+                activePids.Add(pid);
+
+                // Use cached process information when available to avoid high-frequency allocations
+                if (!_processInfoCache.TryGetValue(pid, out var procInfo))
+                {
+                    using var proc = Process.GetProcessById((int)pid);
+                    string procName = proc.ProcessName;
+                    string exePath = GetProcessPath(pid, proc);
+                    procInfo = (procName, exePath);
+                    _processInfoCache[pid] = procInfo;
+                }
+
+                string procNameVal = procInfo.ProcessName;
+                string exePathVal = procInfo.ExePath;
 
                 // Skip known desktop shells / background services
-                if (procName.Equals("explorer", StringComparison.OrdinalIgnoreCase))
+                if (procNameVal.Equals("explorer", StringComparison.OrdinalIgnoreCase))
                 {
                     var sb = new StringBuilder(length + 1);
                     User32.GetWindowText(hWnd, sb, sb.Capacity);
@@ -168,21 +192,19 @@ public class RunningAppsService : IDisposable
                         return true;
                     }
                 }
-                else if (procName.Equals("ApplicationFrameHost", StringComparison.OrdinalIgnoreCase) ||
-                         procName.Equals("TextInputHost", StringComparison.OrdinalIgnoreCase) ||
-                         procName.Equals("ShellExperienceHost", StringComparison.OrdinalIgnoreCase))
+                else if (procNameVal.Equals("ApplicationFrameHost", StringComparison.OrdinalIgnoreCase) ||
+                         procNameVal.Equals("TextInputHost", StringComparison.OrdinalIgnoreCase) ||
+                         procNameVal.Equals("ShellExperienceHost", StringComparison.OrdinalIgnoreCase))
                 {
                     return true;
                 }
-
-                string exePath = GetProcessPath(pid, proc);
 
                 var titleBuilder = new StringBuilder(length + 1);
                 User32.GetWindowText(hWnd, titleBuilder, titleBuilder.Capacity);
                 string windowTitle = titleBuilder.ToString();
 
                 // Group by process executable to keep dock clean and aggregate window handles
-                string key = !string.IsNullOrEmpty(exePath) ? exePath : procName;
+                string key = !string.IsNullOrEmpty(exePathVal) ? exePathVal : procNameVal;
                 if (appByKey.TryGetValue(key, out var existing))
                 {
                     if (!existing.WindowHandles.Contains(hWnd))
@@ -196,8 +218,8 @@ public class RunningAppsService : IDisposable
                     {
                         WindowHandle = hWnd,
                         ProcessId = pid,
-                        ProcessName = procName,
-                        ExecutablePath = exePath,
+                        ProcessName = procNameVal,
+                        ExecutablePath = exePathVal,
                         Title = windowTitle
                     };
                     app.WindowHandles.Add(hWnd);
@@ -212,6 +234,18 @@ public class RunningAppsService : IDisposable
 
             return true;
         }, IntPtr.Zero);
+
+        // Prune terminated PIDs from cache periodically
+        if (_processInfoCache.Count > activePids.Count + 50)
+        {
+            foreach (var cachedPid in _processInfoCache.Keys)
+            {
+                if (!activePids.Contains(cachedPid))
+                {
+                    _processInfoCache.TryRemove(cachedPid, out _);
+                }
+            }
+        }
 
         RunningAppsChanged?.Invoke(runningApps);
     }

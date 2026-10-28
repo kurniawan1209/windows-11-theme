@@ -28,6 +28,8 @@ public class DockItem : ViewModelBase
     private ImageSource? _icon;
     private bool _isPinned;
     private bool _isRunning;
+    private bool _isBeingDragged;
+    private bool _isDropTarget;
 
     public string Name
     {
@@ -87,6 +89,18 @@ public class DockItem : ViewModelBase
     {
         get => _isRunning;
         set => SetProperty(ref _isRunning, value);
+    }
+
+    public bool IsBeingDragged
+    {
+        get => _isBeingDragged;
+        set => SetProperty(ref _isBeingDragged, value);
+    }
+
+    public bool IsDropTarget
+    {
+        get => _isDropTarget;
+        set => SetProperty(ref _isDropTarget, value);
     }
 
     public bool HasMultipleWindows => WindowHandles.Count > 1;
