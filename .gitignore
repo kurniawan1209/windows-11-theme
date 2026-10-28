@@ -53,6 +53,6 @@ $RECYCLE.BIN/
 *.local.json
 
 # files
+/prd
 /files
-/files/*
 /PRD.md
