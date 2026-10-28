@@ -1,0 +1,402 @@
+<Window x:Class="CustomDesktop.Views.ControlPanelWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:CustomDesktop.ViewModels"
+        mc:Ignorable="d"
+        Title="Custom Desktop Control Center"
+        Width="920" Height="820"
+        MinWidth="840" MinHeight="700"
+        WindowStartupLocation="CenterScreen"
+        Background="#0F0F12"
+        Foreground="#F4F4F5"
+        FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif">
+
+    <Window.Resources>
+        <!-- Modern Card Style -->
+        <Style x:Key="CardBorderStyle" TargetType="Border">
+            <Setter Property="Background" Value="#18181B" />
+            <Setter Property="BorderBrush" Value="#27272A" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="14" />
+            <Setter Property="Padding" Value="20" />
+            <Setter Property="Margin" Value="0,0,0,16" />
+        </Style>
+
+        <!-- Modern Toggle CheckBox Style -->
+        <Style x:Key="ModernToggleCheckBox" TargetType="CheckBox">
+            <Setter Property="Foreground" Value="#F4F4F5" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Margin" Value="0,6,16,6" />
+        </Style>
+
+        <!-- Modern Slider Style -->
+        <Style x:Key="ModernSlider" TargetType="Slider">
+            <Setter Property="Margin" Value="0,6,0,10" />
+            <Setter Property="IsSnapToTickEnabled" Value="True" />
+            <Setter Property="TickFrequency" Value="1" />
+            <Setter Property="Cursor" Value="Hand" />
+        </Style>
+
+        <!-- Big Master Toggle Button Style -->
+        <Style x:Key="MasterToggleStyle" TargetType="ToggleButton">
+            <Setter Property="Width" Value="110" />
+            <Setter Property="Height" Value="36" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border x:Name="border" CornerRadius="18" BorderThickness="1"
+                                Background="{TemplateBinding Background}" BorderBrush="#3F3F46">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#0284C7" />
+                                <Setter TargetName="border" Property="BorderBrush" Value="#38BDF8" />
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="False">
+                                <Setter TargetName="border" Property="Background" Value="#27272A" />
+                                <Setter TargetName="border" Property="BorderBrush" Value="#3F3F46" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Grid.Row="0" Margin="0,0,0,18">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Icon -->
+                <Border Grid.Column="0" Width="44" Height="44" CornerRadius="12" Background="#0284C7" Margin="0,0,16,0">
+                    <TextBlock Text="⚡" FontSize="22" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#FFFFFF" />
+                </Border>
+
+                <!-- Title & Subtitle -->
+                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Custom Desktop Control Center" FontSize="20" FontWeight="SemiBold" Foreground="#FFFFFF" />
+                        <Border Background="#27272A" CornerRadius="8" Padding="8,2" Margin="12,0,0,0" VerticalAlignment="Center">
+                            <TextBlock Text="v1.4.0" FontSize="11" FontWeight="Medium" Foreground="#38BDF8" />
+                        </Border>
+                    </StackPanel>
+                    <TextBlock Text="Manage your floating dock, top notch, and desktop visual enhancements"
+                               FontSize="12" Foreground="#A1A1AA" Margin="0,3,0,0" />
+                </StackPanel>
+
+                <!-- Status Badge -->
+                <Border Grid.Column="2" CornerRadius="12" Background="#14532D" Padding="12,6" VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal">
+                        <Ellipse Width="8" Height="8" Fill="#22C55E" Margin="0,0,8,0" VerticalAlignment="Center" />
+                        <TextBlock Text="System Active" FontSize="12" FontWeight="SemiBold" Foreground="#4ADE80" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- Main Content Area -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="0,0,-8,0" Padding="0,0,8,0">
+            <StackPanel>
+
+                <!-- CARD 1: Floating Dock -->
+                <Border Style="{StaticResource CardBorderStyle}">
+                    <StackPanel>
+                        <!-- Card Header & Master Switch -->
+                        <Grid Margin="0,0,0,14">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="🌊 Floating Dock" FontSize="16" FontWeight="SemiBold" Foreground="#FFFFFF" />
+                                    <Border CornerRadius="8" Background="#27272A" Padding="8,2" Margin="10,0,0,0">
+                                        <TextBlock Text="{Binding DockStatusText}" FontSize="11" FontWeight="Bold" Foreground="#38BDF8" />
+                                    </Border>
+                                </StackPanel>
+                                <TextBlock Text="macOS-inspired bottom dock showing active running apps &amp; pinned launchers"
+                                           FontSize="12" Foreground="#A1A1AA" Margin="0,4,0,0" />
+                            </StackPanel>
+
+                            <!-- Master Toggle Button -->
+                            <ToggleButton Grid.Column="1" Style="{StaticResource MasterToggleStyle}" IsChecked="{Binding DockEnabled}">
+                                <TextBlock Text="{Binding DockStatusText}" FontWeight="SemiBold" FontSize="12" Foreground="#FFFFFF" />
+                            </ToggleButton>
+                        </Grid>
+
+                        <Separator Background="#27272A" Margin="0,0,0,14" />
+
+                        <!-- Row 1: App Icon Size & App Gap (Spacious & Prominent) -->
+                        <TextBlock Text="ICON DIMENSIONS &amp; SPACING" FontSize="11" FontWeight="Bold" Foreground="#71717A" Margin="0,0,0,8" />
+                        <Grid Margin="0,0,0,14">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="24" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Icon Size Slider -->
+                            <StackPanel Grid.Column="0">
+                                <DockPanel LastChildFill="False">
+                                    <TextBlock Text="App Icon Size" FontSize="12" FontWeight="Medium" Foreground="#E4E4E7" />
+                                    <TextBlock Text="{Binding DockIconSize, StringFormat='{}{0}px'}" FontSize="12" FontWeight="Bold" Foreground="#38BDF8" DockPanel.Dock="Right" />
+                                </DockPanel>
+                                <Slider Style="{StaticResource ModernSlider}" Minimum="16" Maximum="72" Value="{Binding DockIconSize}" />
+                            </StackPanel>
+
+                            <!-- App Gap Slider -->
+                            <StackPanel Grid.Column="2">
+                                <DockPanel LastChildFill="False">
+                                    <TextBlock Text="Gap Between App Icons" FontSize="12" FontWeight="Medium" Foreground="#E4E4E7" />
+                                    <TextBlock Text="{Binding DockItemGap, StringFormat='{}{0}px'}" FontSize="12" FontWeight="Bold" Foreground="#38BDF8" DockPanel.Dock="Right" />
+                                </DockPanel>
+                                <Slider Style="{StaticResource ModernSlider}" Minimum="2" Maximum="24" Value="{Binding DockItemGap}" />
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Row 2: Dock Background Appearance & Position -->
+                        <TextBlock Text="DOCK APPEARANCE &amp; POSITION" FontSize="11" FontWeight="Bold" Foreground="#71717A" Margin="0,0,0,8" />
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="20" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="20" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Background Opacity Slider -->
+                            <StackPanel Grid.Column="0">
+                                <DockPanel LastChildFill="False">
+                                    <TextBlock Text="Background Opacity" FontSize="12" Foreground="#E4E4E7" />
+                                    <TextBlock Text="{Binding DockOpacityPercent, StringFormat='{}{0}%'}" FontSize="12" FontWeight="Bold" Foreground="#38BDF8" DockPanel.Dock="Right" />
+                                </DockPanel>
+                                <Slider Style="{StaticResource ModernSlider}" Minimum="10" Maximum="100" Value="{Binding DockOpacityPercent}" />
+                            </StackPanel>
+
+                            <!-- Corner Radius Slider -->
+                            <StackPanel Grid.Column="2">
+                                <DockPanel LastChildFill="False">
+                                    <TextBlock Text="Corner Radius" FontSize="12" Foreground="#E4E4E7" />
+                                    <TextBlock Text="{Binding DockCornerRadius, StringFormat='{}{0}px'}" FontSize="12" FontWeight="Bold" Foreground="#38BDF8" DockPanel.Dock="Right" />
+                                </DockPanel>
+                                <Slider Style="{StaticResource ModernSlider}" Minimum="0" Maximum="36" Value="{Binding DockCornerRadius}" />
+                            </StackPanel>
+
+                            <!-- Bottom Margin Slider -->
+                            <StackPanel Grid.Column="4">
+                                <DockPanel LastChildFill="False">
+                                    <TextBlock Text="Bottom Screen Margin" FontSize="12" Foreground="#E4E4E7" />
+                                    <TextBlock Text="{Binding DockMarginFromScreen, StringFormat='{}{0}px'}" FontSize="12" FontWeight="Bold" Foreground="#38BDF8" DockPanel.Dock="Right" />
+                                </DockPanel>
+                                <Slider Style="{StaticResource ModernSlider}" Minimum="0" Maximum="48" Value="{Binding DockMarginFromScreen}" />
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Taskbar Integration & Sub-features -->
+                        <TextBlock Text="TASKBAR &amp; BEHAVIORS" FontSize="11" FontWeight="Bold" Foreground="#71717A" Margin="0,8,0,6" />
+                        <WrapPanel Orientation="Horizontal">
+                            <CheckBox Content="Hide Windows Taskbar when Dock is active" IsChecked="{Binding DockHideWindowsTaskbar}" Style="{StaticResource ModernToggleCheckBox}" Width="320" FontWeight="Medium" Foreground="#38BDF8" />
+                            <CheckBox Content="Show Running Indicator Dots" IsChecked="{Binding DockShowRunningIndicators}" Style="{StaticResource ModernToggleCheckBox}" Width="240" />
+                            <CheckBox Content="Smooth Auto-Hide" IsChecked="{Binding DockAutoHide}" Style="{StaticResource ModernToggleCheckBox}" Width="200" />
+                        </WrapPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- CARD 2: Interactive Notch -->
+                <Border Style="{StaticResource CardBorderStyle}">
+                    <StackPanel>
+                        <!-- Card Header & Master Switch -->
+                        <Grid Margin="0,0,0,14">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="💊 Interactive Notch" FontSize="16" FontWeight="SemiBold" Foreground="#FFFFFF" />
+                                    <Border CornerRadius="8" Background="#27272A" Padding="8,2" Margin="10,0,0,0">
+                                        <TextBlock Text="{Binding NotchStatusText}" FontSize="11" FontWeight="Bold" Foreground="#38BDF8" />
+                                    </Border>
+                                </StackPanel>
+                                <TextBlock Text="Top-anchored dynamic pill with live clock, audio controls &amp; system status"
+                                           FontSize="12" Foreground="#A1A1AA" Margin="0,4,0,0" />
+                            </StackPanel>
+
+                            <!-- Master Toggle Button -->
+                            <ToggleButton Grid.Column="1" Style="{StaticResource MasterToggleStyle}" IsChecked="{Binding NotchEnabled}">
+                                <TextBlock Text="{Binding NotchStatusText}" FontWeight="SemiBold" FontSize="12" Foreground="#FFFFFF" />
+                            </ToggleButton>
+                        </Grid>
+
+                        <Separator Background="#27272A" Margin="0,0,0,14" />
+
+                        <!-- Row 1: Width & Height -->
+                        <TextBlock Text="NOTCH DIMENSIONS" FontSize="11" FontWeight="Bold" Foreground="#71717A" Margin="0,0,0,8" />
+                        <Grid Margin="0,0,0,14">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="24" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Width Slider -->
+                            <StackPanel Grid.Column="0">
+                                <DockPanel LastChildFill="False">
+                                    <TextBlock Text="Notch Width" FontSize="12" FontWeight="Medium" Foreground="#E4E4E7" />
+                                    <TextBlock Text="{Binding NotchWidthCompact, StringFormat='{}{0}px'}" FontSize="12" FontWeight="Bold" Foreground="#38BDF8" DockPanel.Dock="Right" />
+                                </DockPanel>
+                                <Slider Style="{StaticResource ModernSlider}" Minimum="140" Maximum="360" Value="{Binding NotchWidthCompact}" />
+                            </StackPanel>
+
+                            <!-- Height Slider -->
+                            <StackPanel Grid.Column="2">
+                                <DockPanel LastChildFill="False">
+                                    <TextBlock Text="Notch Height" FontSize="12" FontWeight="Medium" Foreground="#E4E4E7" />
+                                    <TextBlock Text="{Binding NotchHeightCompact, StringFormat='{}{0}px'}" FontSize="12" FontWeight="Bold" Foreground="#38BDF8" DockPanel.Dock="Right" />
+                                </DockPanel>
+                                <Slider Style="{StaticResource ModernSlider}" Minimum="28" Maximum="56" Value="{Binding NotchHeightCompact}" />
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Row 2: Appearance & Top Margin -->
+                        <TextBlock Text="NOTCH APPEARANCE &amp; POSITION" FontSize="11" FontWeight="Bold" Foreground="#71717A" Margin="0,0,0,8" />
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="20" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="20" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Background Opacity Slider -->
+                            <StackPanel Grid.Column="0">
+                                <DockPanel LastChildFill="False">
+                                    <TextBlock Text="Background Opacity" FontSize="12" Foreground="#E4E4E7" />
+                                    <TextBlock Text="{Binding NotchOpacityPercent, StringFormat='{}{0}%'}" FontSize="12" FontWeight="Bold" Foreground="#38BDF8" DockPanel.Dock="Right" />
+                                </DockPanel>
+                                <Slider Style="{StaticResource ModernSlider}" Minimum="10" Maximum="100" Value="{Binding NotchOpacityPercent}" />
+                            </StackPanel>
+
+                            <!-- Corner Radius Slider -->
+                            <StackPanel Grid.Column="2">
+                                <DockPanel LastChildFill="False">
+                                    <TextBlock Text="Corner Radius" FontSize="12" Foreground="#E4E4E7" />
+                                    <TextBlock Text="{Binding NotchCornerRadius, StringFormat='{}{0}px'}" FontSize="12" FontWeight="Bold" Foreground="#38BDF8" DockPanel.Dock="Right" />
+                                </DockPanel>
+                                <Slider Style="{StaticResource ModernSlider}" Minimum="0" Maximum="28" Value="{Binding NotchCornerRadius}" />
+                            </StackPanel>
+
+                            <!-- Top Margin Slider -->
+                            <StackPanel Grid.Column="4">
+                                <DockPanel LastChildFill="False">
+                                    <TextBlock Text="Top Screen Margin" FontSize="12" Foreground="#E4E4E7" />
+                                    <TextBlock Text="{Binding NotchMarginFromScreen, StringFormat='{}{0}px'}" FontSize="12" FontWeight="Bold" Foreground="#38BDF8" DockPanel.Dock="Right" />
+                                </DockPanel>
+                                <Slider Style="{StaticResource ModernSlider}" Minimum="0" Maximum="48" Value="{Binding NotchMarginFromScreen}" />
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Sub-features -->
+                        <TextBlock Text="NOTCH MODULES" FontSize="11" FontWeight="Bold" Foreground="#71717A" Margin="0,8,0,6" />
+                        <WrapPanel Orientation="Horizontal">
+                            <CheckBox Content="Show Live Clock" IsChecked="{Binding NotchShowClock}" Style="{StaticResource ModernToggleCheckBox}" Width="180" />
+                            <CheckBox Content="Sound &amp; Volume Slider" IsChecked="{Binding NotchShowSound}" Style="{StaticResource ModernToggleCheckBox}" Width="180" />
+                            <CheckBox Content="Battery Indicator" IsChecked="{Binding NotchShowBattery}" Style="{StaticResource ModernToggleCheckBox}" Width="180" />
+                            <CheckBox Content="Network Status" IsChecked="{Binding NotchShowNetwork}" Style="{StaticResource ModernToggleCheckBox}" Width="180" />
+                            <CheckBox Content="Bluetooth Status" IsChecked="{Binding NotchShowBluetooth}" Style="{StaticResource ModernToggleCheckBox}" Width="180" />
+                            <CheckBox Content="Media Controls (GSMTC)" IsChecked="{Binding NotchShowMedia}" Style="{StaticResource ModernToggleCheckBox}" Width="180" />
+                        </WrapPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- CARD 3: System & Preferences -->
+                <Border Style="{StaticResource CardBorderStyle}">
+                    <StackPanel>
+                        <TextBlock Text="⚙️ System &amp; Lifecycle" FontSize="16" FontWeight="SemiBold" Foreground="#FFFFFF" Margin="0,0,0,4" />
+                        <TextBlock Text="Application persistence and desktop environment preferences"
+                                   FontSize="12" Foreground="#A1A1AA" Margin="0,0,0,12" />
+
+                        <Separator Background="#27272A" Margin="0,0,0,12" />
+
+                        <WrapPanel Orientation="Horizontal">
+                            <CheckBox Content="Close to System Tray" IsChecked="{Binding CloseToTray}" Style="{StaticResource ModernToggleCheckBox}" Width="240" />
+                            <CheckBox Content="Launch on Windows Startup" IsChecked="{Binding LaunchOnStartup}" Style="{StaticResource ModernToggleCheckBox}" Width="240" />
+                            <CheckBox Content="Enable Fluid Animations" IsChecked="{Binding EnableAnimations}" Style="{StaticResource ModernToggleCheckBox}" Width="240" />
+                        </WrapPanel>
+                    </StackPanel>
+                </Border>
+
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Footer / Action Buttons -->
+        <Border Grid.Row="2" Margin="0,16,0,0" Padding="0,12,0,0" BorderBrush="#27272A" BorderThickness="0,1,0,0">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Open Config Button -->
+                <Button Grid.Column="0" Command="{Binding OpenSettingsFolderCommand}"
+                        Padding="14,8" Background="#18181B" BorderBrush="#3F3F46" BorderThickness="1"
+                        Foreground="#E4E4E7" FontSize="12" Cursor="Hand">
+                    <Button.Resources>
+                        <Style TargetType="Border">
+                            <Setter Property="CornerRadius" Value="8" />
+                        </Style>
+                    </Button.Resources>
+                    <TextBlock Text="📁 Open Config Folder" />
+                </Button>
+
+                <!-- Right Action Buttons -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal">
+                    <Button x:Name="MinimizeToTrayButton" Click="OnMinimizeToTrayClick"
+                            Padding="16,8" Background="#27272A" BorderBrush="#3F3F46" BorderThickness="1"
+                            Foreground="#FFFFFF" FontSize="12" FontWeight="SemiBold" Margin="0,0,10,0" Cursor="Hand">
+                        <Button.Resources>
+                            <Style TargetType="Border">
+                                <Setter Property="CornerRadius" Value="8" />
+                            </Style>
+                        </Button.Resources>
+                        <TextBlock Text="Minimize to Tray" />
+                    </Button>
+
+                    <Button Command="{Binding ExitAppCommand}"
+                            Padding="16,8" Background="#7F1D1D" BorderBrush="#991B1B" BorderThickness="1"
+                            Foreground="#FCA5A5" FontSize="12" FontWeight="SemiBold" Cursor="Hand">
+                        <Button.Resources>
+                            <Style TargetType="Border">
+                                <Setter Property="CornerRadius" Value="8" />
+                            </Style>
+                        </Button.Resources>
+                        <TextBlock Text="Exit Suite" />
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>
