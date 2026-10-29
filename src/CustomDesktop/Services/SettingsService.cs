@@ -100,7 +100,7 @@ public class SettingsService : ISettingsService
                             needsSave = true;
                         }
 
-                        if (settings.Version != "3.1.0")
+                        if (settings.Version != "3.4.0")
                         {
                             if (settings.Dock.PinnedApps.Count == 0)
                             {
@@ -111,7 +111,7 @@ public class SettingsService : ISettingsService
                                 }
                             }
                             settings.Notch.ExpandOnHover = true;
-                            settings.Version = "3.1.0";
+                            settings.Version = "3.4.0";
                             needsSave = true;
                         }
 

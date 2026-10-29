@@ -25,7 +25,14 @@ public class NotchViewModel : ViewModelBase, IDisposable
     private readonly MediaService _mediaService;
     private readonly WifiService _wifiService;
     private readonly BluetoothService _bluetoothService;
+    private readonly BatteryService _batteryService;
     private readonly DispatcherTimer _clockTimer;
+    private int _clockTickCount;
+
+    private static readonly Brush _chargingBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#10B981"));
+    private static readonly Brush _criticalBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#EF4444"));
+    private static readonly Brush _warningBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#F59E0B"));
+    private static readonly Brush _normalBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#E4E4E7"));
 
     private bool _isDisposed;
     private bool _isExpanded;
@@ -174,6 +181,24 @@ public class NotchViewModel : ViewModelBase, IDisposable
         private set => SetProperty(ref _isBluetoothRefreshing, value);
     }
 
+    // Battery
+    public bool HasBattery => _batteryService.HasBattery;
+    public int BatteryPercent => _batteryService.BatteryPercent;
+    public bool IsBatteryCharging => _batteryService.IsCharging;
+    public bool IsBatteryVisible => ShowBattery && HasBattery;
+    public string BatteryDisplayText => $"{BatteryPercent}%";
+
+    public Brush BatteryStatusBrush
+    {
+        get
+        {
+            if (IsBatteryCharging) return _chargingBrush;
+            if (BatteryPercent <= 15) return _criticalBrush;
+            if (BatteryPercent <= 25) return _warningBrush;
+            return _normalBrush;
+        }
+    }
+
     // Commands
     public ICommand ToggleExpandCommand { get; }
     public ICommand CollapseCommand { get; }
@@ -189,6 +214,13 @@ public class NotchViewModel : ViewModelBase, IDisposable
     public ICommand OpenBluetoothSettingsCommand { get; }
     public ICommand RefreshWifiCommand { get; }
     public ICommand RefreshBluetoothCommand { get; }
+    public ICommand DisconnectWifiCommand { get; }
+    public ICommand ConnectWifiCommand { get; }
+    public ICommand PromptWifiPasswordCommand { get; }
+    public ICommand CancelWifiPasswordCommand { get; }
+    public ICommand SubmitWifiPasswordCommand { get; }
+    public ICommand ConnectBluetoothCommand { get; }
+    public ICommand DisconnectBluetoothCommand { get; }
 
     public NotchViewModel(ISettingsService settingsService)
     {
@@ -204,6 +236,8 @@ public class NotchViewModel : ViewModelBase, IDisposable
 
         _wifiService = new WifiService();
         _bluetoothService = new BluetoothService();
+        _batteryService = new BatteryService();
+        _batteryService.BatteryStateChanged += OnBatteryStateChanged;
 
         ToggleExpandCommand = new RelayCommand(ToggleExpand);
         CollapseCommand = new RelayCommand(Collapse);
@@ -241,13 +275,128 @@ public class NotchViewModel : ViewModelBase, IDisposable
         RefreshWifiCommand = new RelayCommand(RefreshWifiNetworks);
         RefreshBluetoothCommand = new RelayCommand(() => _ = RefreshBluetoothDevicesAsync());
 
+        DisconnectWifiCommand = new RelayCommand<WifiNetworkItem>(async item =>
+        {
+            if (item != null) item.IsConnecting = true;
+            await _wifiService.DisconnectAsync();
+            if (item != null) item.IsConnecting = false;
+            RefreshWifiNetworks();
+        });
+
+        ConnectWifiCommand = new RelayCommand<WifiNetworkItem>(async item =>
+        {
+            if (item == null) return;
+            if (item.NeedsPassword)
+            {
+                PromptWifiPassword(item);
+                return;
+            }
+
+            item.IsConnecting = true;
+            item.ErrorMessage = null;
+            var res = await _wifiService.ConnectAsync(item.Ssid);
+            item.IsConnecting = false;
+            if (!res.Success)
+            {
+                item.ErrorMessage = res.Message;
+            }
+            RefreshWifiNetworks();
+        });
+
+        PromptWifiPasswordCommand = new RelayCommand<WifiNetworkItem>(item =>
+        {
+            if (item == null) return;
+            PromptWifiPassword(item);
+        });
+
+        CancelWifiPasswordCommand = new RelayCommand<WifiNetworkItem>(item =>
+        {
+            if (item == null) return;
+            item.IsPasswordPromptOpen = false;
+            item.ErrorMessage = null;
+        });
+
+        SubmitWifiPasswordCommand = new RelayCommand<Tuple<WifiNetworkItem, string>>(async tuple =>
+        {
+            if (tuple == null) return;
+            var item = tuple.Item1;
+            var password = tuple.Item2;
+            if (item == null) return;
+
+            item.IsConnecting = true;
+            item.ErrorMessage = null;
+
+            var res = await _wifiService.ConnectWithPasswordAsync(item.Ssid, password ?? "");
+            item.IsConnecting = false;
+
+            if (res.Success)
+            {
+                item.IsPasswordPromptOpen = false;
+                item.ErrorMessage = null;
+                RefreshWifiNetworks();
+            }
+            else
+            {
+                item.ErrorMessage = res.Message;
+            }
+        });
+
+        ConnectBluetoothCommand = new RelayCommand<BluetoothDeviceItem>(async item =>
+        {
+            if (item == null || item.IsBusy) return;
+            item.IsBusy = true;
+            item.ErrorMessage = null;
+            var res = await _bluetoothService.ConnectDeviceAsync(item);
+            item.IsBusy = false;
+            if (!res.Success)
+            {
+                item.ErrorMessage = res.Message;
+            }
+            _ = RefreshBluetoothDevicesAsync();
+        });
+
+        DisconnectBluetoothCommand = new RelayCommand<BluetoothDeviceItem>(async item =>
+        {
+            if (item == null || item.IsBusy) return;
+            item.IsBusy = true;
+            item.ErrorMessage = null;
+            var res = await _bluetoothService.DisconnectDeviceAsync(item);
+            item.IsBusy = false;
+            if (!res.Success)
+            {
+                item.ErrorMessage = res.Message;
+            }
+            _ = RefreshBluetoothDevicesAsync();
+        });
+
         UpdateTime();
         _clockTimer = new DispatcherTimer
         {
             Interval = TimeSpan.FromSeconds(1)
         };
-        _clockTimer.Tick += (_, _) => UpdateTime();
+        _clockTimer.Tick += (_, _) =>
+        {
+            UpdateTime();
+            _clockTickCount++;
+            if (_clockTickCount % 5 == 0)
+            {
+                _batteryService.Refresh();
+            }
+        };
         _clockTimer.Start();
+    }
+
+    private void OnBatteryStateChanged()
+    {
+        Application.Current?.Dispatcher.InvokeAsync(() =>
+        {
+            OnPropertyChanged(nameof(HasBattery));
+            OnPropertyChanged(nameof(BatteryPercent));
+            OnPropertyChanged(nameof(IsBatteryCharging));
+            OnPropertyChanged(nameof(IsBatteryVisible));
+            OnPropertyChanged(nameof(BatteryDisplayText));
+            OnPropertyChanged(nameof(BatteryStatusBrush));
+        });
     }
 
     private void OnSoundVolumeChanged(float newVolume, bool isMuted)
@@ -283,8 +432,17 @@ public class NotchViewModel : ViewModelBase, IDisposable
     private void OnOpened()
     {
         OnPropertyChanged(nameof(IsSpotifyRunning));
-        _ = _mediaService.RefreshMediaPropertiesAsync();
-        LoadActiveTabData();
+        Task.Delay(260).ContinueWith(_ =>
+        {
+            Application.Current?.Dispatcher.InvokeAsync(() =>
+            {
+                if (IsExpanded)
+                {
+                    _ = _mediaService.RefreshMediaPropertiesAsync();
+                    LoadActiveTabData();
+                }
+            });
+        });
     }
 
     private void LoadActiveTabData()
@@ -302,6 +460,20 @@ public class NotchViewModel : ViewModelBase, IDisposable
                 _ = RefreshBluetoothDevicesAsync();
                 break;
         }
+    }
+
+    public void PromptWifiPassword(WifiNetworkItem target)
+    {
+        foreach (var net in AvailableWifiNetworks)
+        {
+            if (net != target && net.IsPasswordPromptOpen)
+            {
+                net.IsPasswordPromptOpen = false;
+                net.ErrorMessage = null;
+            }
+        }
+        target.ErrorMessage = null;
+        target.IsPasswordPromptOpen = true;
     }
 
     public void RefreshWifiNetworks()
@@ -405,6 +577,7 @@ public class NotchViewModel : ViewModelBase, IDisposable
         OnPropertyChanged(nameof(CornerRadiusValue));
         OnPropertyChanged(nameof(ShowClock));
         OnPropertyChanged(nameof(ShowBattery));
+        OnPropertyChanged(nameof(IsBatteryVisible));
         OnPropertyChanged(nameof(ShowSound));
         OnPropertyChanged(nameof(ShowNetwork));
         OnPropertyChanged(nameof(ShowBluetooth));
@@ -430,6 +603,8 @@ public class NotchViewModel : ViewModelBase, IDisposable
 
             _wifiService.Dispose();
             _bluetoothService.Dispose();
+            _batteryService.BatteryStateChanged -= OnBatteryStateChanged;
+            _batteryService.Dispose();
         }
         GC.SuppressFinalize(this);
     }

@@ -2,7 +2,7 @@
 
 ## Custom Windows Dock + Notch Application
 
-**Document Version:** 3.1.0
+**Document Version:** 3.4.0
 
 **Target Platform:** Windows 11 (Build 22000+ / 22621+ Recommended)
 
@@ -29,6 +29,7 @@ The objective of this project is to build a unified, modular desktop customizati
 11. **Optimized Process Scanning & Low-Overhead Running Dots:** Cached process module metadata and DWM cloaked window detection eliminate phantom running dots from background virtual desktops or suspended UWP apps, maintaining high performance and precise single (`•`) and dual (`• •`) indicators.
 12. **Smooth Auto-Hide Slide Animations (Opt-in Only, Disabled by Default):** The dock is permanently anchored at the bottom edge of the display and never collapses down when switching apps or clicking outside. Auto-hide is strictly opt-in; when enabled, it uses customizable delay (`AutoHideDelayMs`), peeking back up when approaching the screen edge, and is inhibited while popups or context menus are open.
 13. **Hover-First Interactive Notch with Dynamic Quick-Control Panels:** The Notch is anchored at the top-center of the screen. Hovering the compact pill expands it smoothly downward with a 350ms debounced leave timer (user-configurable in Admin). The top header features quick navigation icons for Media & Volume (with Spotify detection and launch), Wi-Fi (with available network scan and selection), and Bluetooth (with device list and pairing).
+14. **Direct Wi-Fi & Bluetooth Connect/Disconnect with Credential Support:** Interactive controls in the expanded Notch panels. Users can disconnect from active Wi-Fi or Bluetooth devices with a single click. For Wi-Fi, saved profiles reconnect instantly, while unknown secured networks expand an inline password drawer for direct credential entry, real-time connecting feedback, and inline error reporting. Bluetooth devices support radio-level link teardown and one-click reconnects.
 
 ---
 
@@ -148,6 +149,7 @@ Both `DockWindow` and `NotchWindow` adhere to the following desktop window const
   * `MarginFromScreen`: 0px to 48px (default 0px / flush with top).
   * `Opacity` (Background Only): 10% to 100% (default 92%).
   * `CornerRadius`: 0px to 28px (default 16px).
+* **Default Compact Mode:** Displays live compact Date and Time along with a real-time Battery Percentage and Charging status indicator (`⚡ [Percent%]` when plugged in, `🔋 [Percent%]` when discharging). Automatically hides when no battery is installed (`NoSystemBattery`), and honors the user's `ShowBattery` configuration.
 * **Hover-First Expansion Behavior:**
   * `ExpandOnHover` enabled by default (`true`).
   * Moving mouse over the compact pill smoothly triggers downward expansion.
@@ -203,25 +205,30 @@ Both `DockWindow` and `NotchWindow` adhere to the following desktop window const
   ├── Dynamic Running Dots & Process Scanning Optimization (PID path caching & DWM cloaking filter)
   └── Auto-Hide Smooth Slide Animations (Bottom edge trigger, CubicEase easing & popup inhibition)
 
-[Milestone 3: Interactive Notch] (CURRENT MILESTONE)
+[Milestone 3: Interactive Notch] (COMPLETED)
   ├── Top-Centered Pill Geometry & Positioning
   ├── DispatcherTimer Clock/Date
-  ├── Compact <-> Expanded State Storyboards
+  ├── Live Battery Indicator & Charging Status in Default Notch
+  ├── Compact <-> Expanded State Storyboards & CircleEase Motion Curve
   ├── Hover-First Expansion Mechanics (Configurable Debounced Leave)
   ├── Top Quick-Control Navigation Bar & View Switching
   ├── CoreAudio Master Volume Slider & Mute Toggle
   ├── Spotify Playback Controller & Direct App Launcher
-  ├── Native WLAN Wi-Fi Network Scanner & Selection Panel
-  └── WinRT Bluetooth Device Enumeration & Selection Panel
+  ├── Native WLAN Wi-Fi Network Scanner & Interactive Connect/Disconnect
+  ├── Inline Wi-Fi Password Credential Drawer & Profile Provisioning
+  └── WinRT Bluetooth Device Enumeration & Interactive Connect/Disconnect (IOCTL link teardown)
 
-[Milestone 4: Modular System Controls & Media]
-  ├── BatteryService (PowerStatus fallback)
-  ├── Advanced GSMTC Multi-App Session Switching
-  └── Audio Output Endpoint Device Selector
+[Milestone 4: Modular System Controls & Media] (CURRENT MILESTONE)
+  ├── Audio Output Endpoint Device Selector (IMMDeviceEnumerator / IPolicyConfig)
+  ├── Advanced GSMTC Multi-App Session Switching & Playback Scrubber
+  ├── Display Brightness Control Slider (WMI / DDC-CI)
+  └── Control Panel Notch Modular Controls (ShowSound, ShowMedia, ShowNetwork, ShowBluetooth)
 
-[Milestone 5: Advanced Customization & Polishing]
-  ├── Auto-Start with Windows Registry Run key integration
-  └── Multi-Monitor & Mixed DPI Scaling Verification
+[Milestone 5: Advanced Customization, System Integration & Polish]
+  ├── Auto-Start with Windows Registry Run key integration (HKCU Run key & --minimized boot)
+  ├── Fullscreen Application & Game Detection (Auto-yield/suppress overlay windows)
+  ├── Multi-Monitor & Mixed DPI Scaling Verification (TargetDisplayIndex & dynamic coordinate math)
+  └── Production Polish, System Tray Quick-Actions & Release Packaging
 ```
 
 ---
@@ -230,7 +237,7 @@ Both `DockWindow` and `NotchWindow` adhere to the following desktop window const
 
 ```json
 {
-  "Version": "3.1.0",
+  "Version": "3.4.0",
   "Dock": {
     "Enabled": true,
     "IconSize": 48,

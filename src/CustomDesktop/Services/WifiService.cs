@@ -1,17 +1,93 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
+using System.IO;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Security;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace CustomDesktop.Services;
 
-public class WifiNetworkItem
+public class WifiNetworkItem : INotifyPropertyChanged
 {
-    public string Ssid { get; set; } = string.Empty;
-    public int SignalQuality { get; set; }
-    public string Security { get; set; } = "Secured";
-    public bool IsConnected { get; set; }
+    private string _ssid = string.Empty;
+    private int _signalQuality;
+    private string _security = "Secured";
+    private bool _isConnected;
+    private bool _hasSavedProfile;
+    private bool _isPasswordPromptOpen;
+    private bool _isConnecting;
+    private string? _errorMessage;
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+    protected void OnPropertyChanged([CallerMemberName] string? propName = null)
+        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName));
+
+    public string Ssid
+    {
+        get => _ssid;
+        set { _ssid = value; OnPropertyChanged(); }
+    }
+
+    public int SignalQuality
+    {
+        get => _signalQuality;
+        set { _signalQuality = value; OnPropertyChanged(); OnPropertyChanged(nameof(SignalGlyph)); }
+    }
+
+    public string Security
+    {
+        get => _security;
+        set
+        {
+            _security = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(SecurityGlyph));
+            OnPropertyChanged(nameof(NeedsPassword));
+        }
+    }
+
+    public bool IsConnected
+    {
+        get => _isConnected;
+        set { _isConnected = value; OnPropertyChanged(); OnPropertyChanged(nameof(CanConnect)); OnPropertyChanged(nameof(CanDisconnect)); }
+    }
+
+    public bool HasSavedProfile
+    {
+        get => _hasSavedProfile;
+        set { _hasSavedProfile = value; OnPropertyChanged(); OnPropertyChanged(nameof(NeedsPassword)); }
+    }
+
+    public bool IsPasswordPromptOpen
+    {
+        get => _isPasswordPromptOpen;
+        set { _isPasswordPromptOpen = value; OnPropertyChanged(); }
+    }
+
+    public bool IsConnecting
+    {
+        get => _isConnecting;
+        set { _isConnecting = value; OnPropertyChanged(); }
+    }
+
+    public string? ErrorMessage
+    {
+        get => _errorMessage;
+        set { _errorMessage = value; OnPropertyChanged(); OnPropertyChanged(nameof(HasError)); }
+    }
+
+    public bool HasError => !string.IsNullOrEmpty(_errorMessage);
+
+    public bool NeedsPassword => !HasSavedProfile && Security != "Open";
+
+    public bool CanConnect => !IsConnected && !IsConnecting;
+
+    public bool CanDisconnect => IsConnected && !IsConnecting;
 
     public string SignalGlyph => SignalQuality switch
     {
@@ -43,10 +119,48 @@ public class WifiService : IDisposable
         }
     }
 
+    public HashSet<string> GetSavedProfiles()
+    {
+        var profiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        try
+        {
+            var psi = new ProcessStartInfo
+            {
+                FileName = "netsh",
+                Arguments = "wlan show profiles",
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+            using var proc = Process.Start(psi);
+            if (proc != null)
+            {
+                string output = proc.StandardOutput.ReadToEnd();
+                proc.WaitForExit();
+                foreach (var line in output.Split('\n'))
+                {
+                    int colonIdx = line.IndexOf(':');
+                    if (colonIdx >= 0 && line.Contains("Profile"))
+                    {
+                        string name = line[(colonIdx + 1)..].Trim();
+                        if (!string.IsNullOrWhiteSpace(name))
+                        {
+                            profiles.Add(name);
+                        }
+                    }
+                }
+            }
+        }
+        catch { }
+        return profiles;
+    }
+
     public List<WifiNetworkItem> ScanAvailableNetworks()
     {
         var result = new List<WifiNetworkItem>();
         if (_clientHandle == IntPtr.Zero) return result;
+
+        var savedProfiles = GetSavedProfiles();
 
         try
         {
@@ -100,7 +214,8 @@ public class WifiService : IDisposable
                                         Ssid = ssid,
                                         SignalQuality = (int)network.wlanSignalQuality,
                                         Security = sec,
-                                        IsConnected = isConnected
+                                        IsConnected = isConnected,
+                                        HasSavedProfile = savedProfiles.Contains(ssid)
                                     });
                                 }
                             }
@@ -131,6 +246,198 @@ public class WifiService : IDisposable
         });
 
         return result;
+    }
+
+    public async Task<bool> DisconnectAsync()
+    {
+        return await Task.Run(() =>
+        {
+            try
+            {
+                var psi = new ProcessStartInfo
+                {
+                    FileName = "netsh",
+                    Arguments = "wlan disconnect",
+                    RedirectStandardOutput = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+                using var proc = Process.Start(psi);
+                proc?.WaitForExit(3000);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        });
+    }
+
+    public async Task<(bool Success, string Message)> ConnectAsync(string ssid)
+    {
+        return await Task.Run(() =>
+        {
+            try
+            {
+                var psi = new ProcessStartInfo
+                {
+                    FileName = "netsh",
+                    Arguments = $"wlan connect name=\"{ssid}\"",
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+                using var proc = Process.Start(psi);
+                string output = proc?.StandardOutput.ReadToEnd() ?? "";
+                proc?.WaitForExit(5000);
+
+                if (output.Contains("completed successfully", StringComparison.OrdinalIgnoreCase) ||
+                    output.Contains("Connection request was completed", StringComparison.OrdinalIgnoreCase))
+                {
+                    return (true, "Connected successfully.");
+                }
+
+                return (false, string.IsNullOrWhiteSpace(output) ? "Could not connect to network." : output.Trim());
+            }
+            catch (Exception ex)
+            {
+                return (false, ex.Message);
+            }
+        });
+    }
+
+    public async Task<(bool Success, string Message)> ConnectWithPasswordAsync(string ssid, string password)
+    {
+        return await Task.Run(() =>
+        {
+            string tempFile = Path.Combine(Path.GetTempPath(), $"wifi_{Guid.NewGuid():N}.xml");
+            try
+            {
+                string hexSsid = Convert.ToHexString(Encoding.UTF8.GetBytes(ssid));
+                string xml = $@"<?xml version=""1.0""?>
+<WLANProfile xmlns=""http://www.microsoft.com/networking/WLAN/profile/v1"">
+    <name>{SecurityElement.Escape(ssid)}</name>
+    <SSIDConfig>
+        <SSID>
+            <hex>{hexSsid}</hex>
+            <name>{SecurityElement.Escape(ssid)}</name>
+        </SSID>
+    </SSIDConfig>
+    <connectionType>ESS</connectionType>
+    <connectionMode>auto</connectionMode>
+    <MSM>
+        <security>
+            <authEncryption>
+                <authentication>WPA2PSK</authentication>
+                <encryption>AES</encryption>
+                <useOneX>false</useOneX>
+            </authEncryption>
+            <sharedKey>
+                <keyType>passPhrase</keyType>
+                <protected>false</protected>
+                <keyMaterial>{SecurityElement.Escape(password)}</keyMaterial>
+            </sharedKey>
+        </security>
+    </MSM>
+</WLANProfile>";
+
+                File.WriteAllText(tempFile, xml, Encoding.UTF8);
+
+                // Register profile
+                var addPsi = new ProcessStartInfo
+                {
+                    FileName = "netsh",
+                    Arguments = $"wlan add profile filename=\"{tempFile}\" user=all",
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+                using (var addProc = Process.Start(addPsi))
+                {
+                    addProc?.WaitForExit(4000);
+                }
+
+                // Connect using new profile
+                var connPsi = new ProcessStartInfo
+                {
+                    FileName = "netsh",
+                    Arguments = $"wlan connect name=\"{ssid}\"",
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+                using var connProc = Process.Start(connPsi);
+                string connOut = connProc?.StandardOutput.ReadToEnd() ?? "";
+                connProc?.WaitForExit(5000);
+
+                // Poll for connection confirmation
+                for (int i = 0; i < 7; i++)
+                {
+                    Thread.Sleep(1000);
+                    if (IsCurrentlyConnectedTo(ssid))
+                    {
+                        return (true, "Connected successfully.");
+                    }
+                }
+
+                return (true, "Connection request completed.");
+            }
+            catch (Exception ex)
+            {
+                return (false, ex.Message);
+            }
+            finally
+            {
+                try
+                {
+                    if (File.Exists(tempFile)) File.Delete(tempFile);
+                }
+                catch { }
+            }
+        });
+    }
+
+    private bool IsCurrentlyConnectedTo(string ssid)
+    {
+        try
+        {
+            var psi = new ProcessStartInfo
+            {
+                FileName = "netsh",
+                Arguments = "wlan show interfaces",
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+            using var proc = Process.Start(psi);
+            if (proc == null) return false;
+            string output = proc.StandardOutput.ReadToEnd();
+            proc.WaitForExit();
+
+            bool hasSsid = false;
+            bool isConnected = false;
+
+            foreach (var line in output.Split('\n'))
+            {
+                if (line.Contains("SSID") && !line.Contains("BSSID") && line.Contains(ssid, StringComparison.OrdinalIgnoreCase))
+                {
+                    hasSsid = true;
+                }
+                if (line.Contains("State") && line.Contains("connected", StringComparison.OrdinalIgnoreCase))
+                {
+                    isConnected = true;
+                }
+            }
+
+            return hasSsid && isConnected;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     public void OpenNetworkFlyout()

@@ -182,6 +182,99 @@
                 </Setter.Value>
             </Setter>
         </Style>
+        <!-- Connect / Disconnect Action Button Styles -->
+        <Style x:Key="ConnectActionButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="#2038BDF8" />
+            <Setter Property="Foreground" Value="#38BDF8" />
+            <Setter Property="BorderBrush" Value="#3538BDF8" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="8,2" />
+            <Setter Property="FontSize" Value="10" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Border" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="5" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Border" Property="Background" Value="#38BDF8" />
+                                <Setter Property="Foreground" Value="#000000" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Border" Property="Opacity" Value="0.5" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="DisconnectActionButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="#20EF4444" />
+            <Setter Property="Foreground" Value="#F87171" />
+            <Setter Property="BorderBrush" Value="#35EF4444" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="8,2" />
+            <Setter Property="FontSize" Value="10" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Border" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="5" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Border" Property="Background" Value="#EF4444" />
+                                <Setter Property="Foreground" Value="#FFFFFF" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Border" Property="Opacity" Value="0.5" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Inline Password Box Style -->
+        <Style x:Key="InlinePasswordBoxStyle" TargetType="PasswordBox">
+            <Setter Property="Background" Value="#121216" />
+            <Setter Property="Foreground" Value="#FFFFFF" />
+            <Setter Property="BorderBrush" Value="#30FFFFFF" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CaretBrush" Value="#38BDF8" />
+            <Setter Property="Padding" Value="6,3" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="PasswordBox">
+                        <Border x:Name="PBoxBorder" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="5">
+                            <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsFocused" Value="True">
+                                <Setter TargetName="PBoxBorder" Property="BorderBrush" Value="#38BDF8" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
 
     <Grid x:Name="RootGrid" Margin="0" Background="Transparent" Cursor="Hand" MouseLeftButtonDown="OnRootGridMouseLeftButtonDown">
@@ -198,16 +291,47 @@
         </Border>
 
         <!-- 2. Foreground Content Layer: 100% Solid & Fully Opaque -->
-        <!-- VIEW A: Compact Mode Content (Date & Time Only) -->
-        <Grid x:Name="CompactContentGrid" VerticalAlignment="Center" Margin="14,0" Opacity="1">
+        <!-- VIEW A: Compact Mode Content (Date, Time & Battery) -->
+        <Grid x:Name="CompactContentGrid" VerticalAlignment="Top" Height="{Binding HeightCompact, FallbackValue=36}" Margin="14,0" Opacity="1">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <!-- Date -->
                 <TextBlock Text="{Binding DateStringCompact, FallbackValue='Wed, Oct 28'}"
                            FontWeight="Medium" FontSize="11" Foreground="#A1A1AA"
                            VerticalAlignment="Center" />
-                <TextBlock Text="•" FontSize="10" Foreground="#52525B" Margin="8,0" VerticalAlignment="Center" />
+                <TextBlock Text="•" FontSize="10" Foreground="#52525B" Margin="7,0" VerticalAlignment="Center" />
+
+                <!-- Time -->
                 <TextBlock Text="{Binding TimeString, FallbackValue='12:00 PM'}"
                            FontWeight="SemiBold" FontSize="12" Foreground="#FFFFFF"
                            VerticalAlignment="Center" />
+
+                <!-- Battery & Charging Indicator -->
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center"
+                            Visibility="{Binding IsBatteryVisible, Converter={StaticResource BoolToVis}}">
+                    <TextBlock Text="•" FontSize="10" Foreground="#52525B" Margin="7,0" VerticalAlignment="Center" />
+
+                    <!-- Charging Bolt Glyph (when charging) -->
+                    <TextBlock Text="⚡" FontSize="10" Foreground="#10B981" Margin="0,0,3,0" VerticalAlignment="Center"
+                               Visibility="{Binding IsBatteryCharging, Converter={StaticResource BoolToVis}}" />
+
+                    <!-- Battery Glyph (when discharging / not charging) -->
+                    <TextBlock Text="🔋" FontSize="10" Foreground="{Binding BatteryStatusBrush}" Margin="0,0,3,0" VerticalAlignment="Center">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsBatteryCharging}" Value="True">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+
+                    <!-- Battery Percentage Text -->
+                    <TextBlock Text="{Binding BatteryDisplayText, FallbackValue='100%'}"
+                               FontSize="11" FontWeight="SemiBold" Foreground="{Binding BatteryStatusBrush}"
+                               VerticalAlignment="Center" />
+                </StackPanel>
             </StackPanel>
         </Grid>
 
@@ -467,22 +591,73 @@
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
                                         <Border Background="#1C1C22" BorderBrush="#15FFFFFF" BorderThickness="1"
-                                                CornerRadius="6" Padding="8,6" Margin="0,2" Cursor="Hand">
-                                            <DockPanel LastChildFill="True">
-                                                <TextBlock Text="{Binding SignalGlyph}" FontFamily="Segoe MDL2 Assets" FontSize="12"
-                                                           Foreground="#FFFFFF" Margin="0,0,8,0" VerticalAlignment="Center" />
-                                                <TextBlock Text="{Binding SecurityGlyph}" FontFamily="Segoe MDL2 Assets" FontSize="11"
-                                                           Foreground="#E4E4E7" Margin="0,0,8,0" VerticalAlignment="Center" />
-                                                
-                                                <!-- Connected Tag if active -->
-                                                <Border DockPanel.Dock="Right" Background="#2010B981" CornerRadius="4" Padding="6,2"
-                                                        Visibility="{Binding IsConnected, Converter={StaticResource BoolToVis}}">
-                                                    <TextBlock Text="Connected" FontSize="9" FontWeight="Bold" Foreground="#10B981" />
-                                                </Border>
+                                                CornerRadius="6" Padding="8,6" Margin="0,2">
+                                            <StackPanel>
+                                                <!-- Top Row: SSID + Status & Connect/Disconnect Actions -->
+                                                <DockPanel LastChildFill="True">
+                                                    <TextBlock Text="{Binding SignalGlyph}" FontFamily="Segoe MDL2 Assets" FontSize="12"
+                                                               Foreground="#FFFFFF" Margin="0,0,8,0" VerticalAlignment="Center" />
+                                                    <TextBlock Text="{Binding SecurityGlyph}" FontFamily="Segoe MDL2 Assets" FontSize="11"
+                                                               Foreground="#E4E4E7" Margin="0,0,8,0" VerticalAlignment="Center" />
 
-                                                <TextBlock Text="{Binding Ssid}" FontSize="11" FontWeight="Medium" Foreground="#F4F4F5"
-                                                           TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
-                                            </DockPanel>
+                                                    <!-- Action Controls Docked Right -->
+                                                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                                                        <!-- Connected State -->
+                                                        <StackPanel Orientation="Horizontal" Visibility="{Binding IsConnected, Converter={StaticResource BoolToVis}}">
+                                                            <Border Background="#2010B981" CornerRadius="4" Padding="6,2" Margin="0,0,6,0" VerticalAlignment="Center">
+                                                                <TextBlock Text="Connected" FontSize="9" FontWeight="Bold" Foreground="#10B981" />
+                                                            </Border>
+                                                            <Button Style="{StaticResource DisconnectActionButtonStyle}" Content="Disconnect"
+                                                                    Command="{Binding DataContext.DisconnectWifiCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                    CommandParameter="{Binding}" ToolTip="Disconnect from this network" />
+                                                        </StackPanel>
+
+                                                        <!-- Disconnected State: Connect Button -->
+                                                        <Button Style="{StaticResource ConnectActionButtonStyle}" Content="Connect"
+                                                                Visibility="{Binding CanConnect, Converter={StaticResource BoolToVis}}"
+                                                                Command="{Binding DataContext.ConnectWifiCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                CommandParameter="{Binding}" ToolTip="Connect to this network" />
+
+                                                        <!-- Connecting Spinner Text -->
+                                                        <TextBlock Text="Connecting..." FontSize="9" FontWeight="SemiBold" Foreground="#38BDF8" Margin="4,0,0,0" VerticalAlignment="Center"
+                                                                   Visibility="{Binding IsConnecting, Converter={StaticResource BoolToVis}}" />
+                                                    </StackPanel>
+
+                                                    <!-- SSID Name -->
+                                                    <TextBlock Text="{Binding Ssid}" FontSize="11" FontWeight="Medium" Foreground="#F4F4F5"
+                                                               TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                                                </DockPanel>
+
+                                                <!-- Inline Password Drawer (for secured networks without saved profiles) -->
+                                                <Border Visibility="{Binding IsPasswordPromptOpen, Converter={StaticResource BoolToVis}}"
+                                                        Background="#121216" BorderBrush="#2538BDF8" BorderThickness="1"
+                                                        CornerRadius="6" Margin="0,6,0,2" Padding="8,6">
+                                                    <StackPanel>
+                                                        <TextBlock Text="Enter Network Password:" FontSize="10" Foreground="#A1A1AA" Margin="0,0,0,4" />
+                                                        <Grid>
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="*" />
+                                                                <ColumnDefinition Width="Auto" />
+                                                                <ColumnDefinition Width="Auto" />
+                                                            </Grid.ColumnDefinitions>
+
+                                                            <PasswordBox Grid.Column="0" Tag="{Binding}" Style="{StaticResource InlinePasswordBoxStyle}"
+                                                                         KeyDown="OnWifiPasswordKeyDown" Margin="0,0,6,0" />
+
+                                                            <Button Grid.Column="1" Style="{StaticResource ConnectActionButtonStyle}" Content="Connect"
+                                                                    Padding="10,3" Margin="0,0,4,0" Tag="{Binding}" Click="OnSubmitWifiPasswordClicked" />
+
+                                                            <Button Grid.Column="2" Style="{StaticResource SubtleButtonStyle}" Content="✕"
+                                                                    Padding="6,3" Command="{Binding DataContext.CancelWifiPasswordCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                    CommandParameter="{Binding}" ToolTip="Cancel" />
+                                                        </Grid>
+
+                                                        <!-- Inline Error Feedback -->
+                                                        <TextBlock Text="{Binding ErrorMessage}" Foreground="#EF4444" FontSize="10" Margin="0,4,0,0"
+                                                                   Visibility="{Binding HasError, Converter={StaticResource BoolToVis}}" TextWrapping="Wrap" />
+                                                    </StackPanel>
+                                                </Border>
+                                            </StackPanel>
                                         </Border>
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
@@ -547,35 +722,53 @@
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
                                         <Border Background="#1C1C22" BorderBrush="#15FFFFFF" BorderThickness="1"
-                                                CornerRadius="6" Padding="8,6" Margin="0,2" Cursor="Hand">
+                                                CornerRadius="6" Padding="8,6" Margin="0,2">
                                             <DockPanel LastChildFill="True">
                                                 <TextBlock Text="{Binding DeviceIcon}" FontSize="12" Margin="0,0,8,0" VerticalAlignment="Center" />
 
-                                                <!-- Status Badge -->
-                                                <Border DockPanel.Dock="Right" CornerRadius="4" Padding="6,2">
-                                                    <Border.Style>
-                                                        <Style TargetType="Border">
-                                                            <Setter Property="Background" Value="#15FFFFFF" />
-                                                            <Style.Triggers>
-                                                                <DataTrigger Binding="{Binding IsConnected}" Value="True">
-                                                                    <Setter Property="Background" Value="#2010B981" />
-                                                                </DataTrigger>
-                                                            </Style.Triggers>
-                                                        </Style>
-                                                    </Border.Style>
-                                                    <TextBlock Text="{Binding StatusText}" FontSize="9" FontWeight="Bold">
-                                                        <TextBlock.Style>
-                                                            <Style TargetType="TextBlock">
-                                                                <Setter Property="Foreground" Value="#71717A" />
+                                                <!-- Action & Status Badge Docked Right -->
+                                                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <!-- Status Badge -->
+                                                    <Border CornerRadius="4" Padding="6,2" Margin="0,0,6,0" VerticalAlignment="Center">
+                                                        <Border.Style>
+                                                            <Style TargetType="Border">
+                                                                <Setter Property="Background" Value="#15FFFFFF" />
                                                                 <Style.Triggers>
                                                                     <DataTrigger Binding="{Binding IsConnected}" Value="True">
-                                                                        <Setter Property="Foreground" Value="#10B981" />
+                                                                        <Setter Property="Background" Value="#2010B981" />
                                                                     </DataTrigger>
                                                                 </Style.Triggers>
                                                             </Style>
-                                                        </TextBlock.Style>
-                                                    </TextBlock>
-                                                </Border>
+                                                        </Border.Style>
+                                                        <TextBlock Text="{Binding StatusText}" FontSize="9" FontWeight="Bold">
+                                                            <TextBlock.Style>
+                                                                <Style TargetType="TextBlock">
+                                                                    <Setter Property="Foreground" Value="#71717A" />
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding IsConnected}" Value="True">
+                                                                            <Setter Property="Foreground" Value="#10B981" />
+                                                                        </DataTrigger>
+                                                                        <DataTrigger Binding="{Binding IsBusy}" Value="True">
+                                                                            <Setter Property="Foreground" Value="#38BDF8" />
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </TextBlock.Style>
+                                                        </TextBlock>
+                                                    </Border>
+
+                                                    <!-- Disconnect Button (when connected) -->
+                                                    <Button Style="{StaticResource DisconnectActionButtonStyle}" Content="Disconnect"
+                                                            Visibility="{Binding CanDisconnect, Converter={StaticResource BoolToVis}}"
+                                                            Command="{Binding DataContext.DisconnectBluetoothCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                            CommandParameter="{Binding}" ToolTip="Disconnect device" />
+
+                                                    <!-- Connect Button (when disconnected) -->
+                                                    <Button Style="{StaticResource ConnectActionButtonStyle}" Content="Connect"
+                                                            Visibility="{Binding CanConnect, Converter={StaticResource BoolToVis}}"
+                                                            Command="{Binding DataContext.ConnectBluetoothCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                            CommandParameter="{Binding}" ToolTip="Connect to this device" />
+                                                </StackPanel>
 
                                                 <TextBlock Text="{Binding Name}" FontSize="11" FontWeight="Medium" Foreground="#F4F4F5"
                                                            TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />

@@ -6,7 +6,7 @@ namespace CustomDesktop.Core.Models;
 public class AppSettings
 {
     [JsonPropertyName("Version")]
-    public string Version { get; set; } = "3.1.0";
+    public string Version { get; set; } = "3.4.0";
 
     [JsonPropertyName("Dock")]
     public DockSettings Dock { get; set; } = new();

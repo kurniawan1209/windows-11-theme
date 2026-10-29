@@ -1,10 +1,13 @@
 using System;
 using System.ComponentModel;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
 using CustomDesktop.Core.Native;
+using CustomDesktop.Services;
 using CustomDesktop.ViewModels;
 using CustomDesktop.Views.Base;
 
@@ -16,6 +19,7 @@ public partial class NotchWindow : NonActivatingWindow
     private readonly DispatcherTimer _hoverDebounceTimer;
     private readonly User32.LowLevelMouseProc _mouseProc;
     private IntPtr _mouseHookHandle = IntPtr.Zero;
+    private int _animationSessionId = 0;
     private bool _isAnimating;
 
     public NotchWindow(NotchViewModel viewModel)
@@ -75,10 +79,10 @@ public partial class NotchWindow : NonActivatingWindow
 
         double targetWidth = _viewModel.IsExpanded ? _viewModel.WidthExpanded : _viewModel.WidthCompact;
         double targetHeight = _viewModel.IsExpanded ? _viewModel.HeightExpanded : _viewModel.HeightCompact;
+        double targetLeft = Math.Round((SystemParameters.PrimaryScreenWidth - targetWidth) / 2.0);
+        double targetTop = _viewModel.MarginFromScreen;
 
-        Width = targetWidth;
-        Height = targetHeight;
-        PositionAtTopCenter(targetWidth, _viewModel.MarginFromScreen);
+        ApplyInstantDimensions(targetWidth, targetHeight, targetLeft, targetTop, _viewModel.IsExpanded);
     }
 
     private void OnRootGridMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -99,7 +103,7 @@ public partial class NotchWindow : NonActivatingWindow
         if (_viewModel.ExpandOnHover)
         {
             _hoverDebounceTimer.Stop();
-            if (!_viewModel.IsExpanded && !_isAnimating)
+            if (!_viewModel.IsExpanded)
             {
                 _viewModel.Expand();
             }
@@ -108,10 +112,13 @@ public partial class NotchWindow : NonActivatingWindow
 
     private void OnWindowMouseMove(object sender, MouseEventArgs e)
     {
-        if (_viewModel.ExpandOnHover && !_viewModel.IsExpanded && !_isAnimating)
+        if (_viewModel.ExpandOnHover)
         {
             _hoverDebounceTimer.Stop();
-            _viewModel.Expand();
+            if (!_viewModel.IsExpanded)
+            {
+                _viewModel.Expand();
+            }
         }
     }
 
@@ -168,6 +175,9 @@ public partial class NotchWindow : NonActivatingWindow
     {
         InstallMouseHook();
 
+        int session = ++_animationSessionId;
+        _isAnimating = true;
+
         double screenWidth = SystemParameters.PrimaryScreenWidth;
         double targetWidth = _viewModel.WidthExpanded;
         double targetHeight = _viewModel.HeightExpanded;
@@ -176,59 +186,46 @@ public partial class NotchWindow : NonActivatingWindow
 
         if (!_viewModel.EnableAnimations)
         {
-            BeginAnimation(WidthProperty, null);
-            BeginAnimation(LeftProperty, null);
-            BeginAnimation(HeightProperty, null);
-
-            Width = targetWidth;
-            Left = targetLeft;
-            Height = targetHeight;
-            Top = targetTop;
-
-            CompactContentGrid.Visibility = Visibility.Collapsed;
-            CompactContentGrid.Opacity = 0;
-            ExpandedContentGrid.Visibility = Visibility.Visible;
-            ExpandedContentGrid.Opacity = 1;
+            ApplyInstantDimensions(targetWidth, targetHeight, targetLeft, targetTop, isExpanded: true);
+            _isAnimating = false;
             return;
         }
 
-        _isAnimating = true;
-        var duration = TimeSpan.FromMilliseconds(260);
-        var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
+        double startWidth = ActualWidth > 0 ? ActualWidth : Width;
+        double startHeight = ActualHeight > 0 ? ActualHeight : Height;
+        double startLeft = Left;
 
-        // 1. Simultaneous Width, Left, and Height Animations
-        var widthAnim = new DoubleAnimation(Width, targetWidth, duration) { EasingFunction = ease };
-        var leftAnim = new DoubleAnimation(Left, targetLeft, duration) { EasingFunction = ease };
-        var heightAnim = new DoubleAnimation(Height, targetHeight, duration) { EasingFunction = ease };
+        var duration = TimeSpan.FromMilliseconds(260);
+        var ease = new CircleEase { EasingMode = EasingMode.EaseOut };
+
+        // 1. Prepare Content Visibility
+        ExpandedContentGrid.Visibility = Visibility.Visible;
+        CompactContentGrid.Visibility = Visibility.Visible;
+
+        // 2. Simultaneous Width, Left, and Height Animations
+        var widthAnim = new DoubleAnimation(startWidth, targetWidth, duration) { EasingFunction = ease };
+        var leftAnim = new DoubleAnimation(startLeft, targetLeft, duration) { EasingFunction = ease };
+        var heightAnim = new DoubleAnimation(startHeight, targetHeight, duration) { EasingFunction = ease };
 
         heightAnim.Completed += (_, _) =>
         {
+            if (session != _animationSessionId) return;
+
             _isAnimating = false;
-            Width = targetWidth;
-            Left = targetLeft;
-            Height = targetHeight;
-            Top = targetTop;
-            BeginAnimation(WidthProperty, null);
-            BeginAnimation(LeftProperty, null);
-            BeginAnimation(HeightProperty, null);
+            ApplyInstantDimensions(targetWidth, targetHeight, targetLeft, targetTop, isExpanded: true);
         };
 
         BeginAnimation(WidthProperty, widthAnim);
         BeginAnimation(LeftProperty, leftAnim);
         BeginAnimation(HeightProperty, heightAnim);
 
-        // 2. Crossfade Content Storyboard
-        var fadeOutCompact = new DoubleAnimation(CompactContentGrid.Opacity, 0, TimeSpan.FromMilliseconds(120))
-        {
-            EasingFunction = ease
-        };
-        fadeOutCompact.Completed += (_, _) => CompactContentGrid.Visibility = Visibility.Collapsed;
+        // 3. Smooth Crossfade Content
+        var fadeOutCompact = new DoubleAnimation(CompactContentGrid.Opacity, 0, TimeSpan.FromMilliseconds(130)) { EasingFunction = ease };
         CompactContentGrid.BeginAnimation(OpacityProperty, fadeOutCompact);
 
-        ExpandedContentGrid.Visibility = Visibility.Visible;
-        var fadeInExpanded = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(180))
+        var fadeInExpanded = new DoubleAnimation(ExpandedContentGrid.Opacity, 1, TimeSpan.FromMilliseconds(190))
         {
-            BeginTime = TimeSpan.FromMilliseconds(60),
+            BeginTime = TimeSpan.FromMilliseconds(70),
             EasingFunction = ease
         };
         ExpandedContentGrid.BeginAnimation(OpacityProperty, fadeInExpanded);
@@ -238,6 +235,9 @@ public partial class NotchWindow : NonActivatingWindow
     {
         UninstallMouseHook();
 
+        int session = ++_animationSessionId;
+        _isAnimating = true;
+
         double screenWidth = SystemParameters.PrimaryScreenWidth;
         double targetWidth = _viewModel.WidthCompact;
         double targetHeight = _viewModel.HeightCompact;
@@ -246,62 +246,78 @@ public partial class NotchWindow : NonActivatingWindow
 
         if (!_viewModel.EnableAnimations)
         {
-            BeginAnimation(WidthProperty, null);
-            BeginAnimation(LeftProperty, null);
-            BeginAnimation(HeightProperty, null);
-
-            Width = targetWidth;
-            Left = targetLeft;
-            Height = targetHeight;
-            Top = targetTop;
-
-            ExpandedContentGrid.Visibility = Visibility.Collapsed;
-            ExpandedContentGrid.Opacity = 0;
-            CompactContentGrid.Visibility = Visibility.Visible;
-            CompactContentGrid.Opacity = 1;
+            ApplyInstantDimensions(targetWidth, targetHeight, targetLeft, targetTop, isExpanded: false);
+            _isAnimating = false;
             return;
         }
 
-        _isAnimating = true;
-        var duration = TimeSpan.FromMilliseconds(240);
-        var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
+        double startWidth = ActualWidth > 0 ? ActualWidth : Width;
+        double startHeight = ActualHeight > 0 ? ActualHeight : Height;
+        double startLeft = Left;
 
-        // 1. Simultaneous Width, Left, and Height Animations
-        var widthAnim = new DoubleAnimation(Width, targetWidth, duration) { EasingFunction = ease };
-        var leftAnim = new DoubleAnimation(Left, targetLeft, duration) { EasingFunction = ease };
-        var heightAnim = new DoubleAnimation(Height, targetHeight, duration) { EasingFunction = ease };
+        var duration = TimeSpan.FromMilliseconds(220);
+        var ease = new CircleEase { EasingMode = EasingMode.EaseOut };
+
+        // 1. Prepare Content Visibility
+        CompactContentGrid.Visibility = Visibility.Visible;
+
+        // 2. Simultaneous Width, Left, and Height Animations
+        var widthAnim = new DoubleAnimation(startWidth, targetWidth, duration) { EasingFunction = ease };
+        var leftAnim = new DoubleAnimation(startLeft, targetLeft, duration) { EasingFunction = ease };
+        var heightAnim = new DoubleAnimation(startHeight, targetHeight, duration) { EasingFunction = ease };
 
         heightAnim.Completed += (_, _) =>
         {
+            if (session != _animationSessionId) return;
+
             _isAnimating = false;
-            Width = targetWidth;
-            Left = targetLeft;
-            Height = targetHeight;
-            Top = targetTop;
-            BeginAnimation(WidthProperty, null);
-            BeginAnimation(LeftProperty, null);
-            BeginAnimation(HeightProperty, null);
+            ApplyInstantDimensions(targetWidth, targetHeight, targetLeft, targetTop, isExpanded: false);
         };
 
         BeginAnimation(WidthProperty, widthAnim);
         BeginAnimation(LeftProperty, leftAnim);
         BeginAnimation(HeightProperty, heightAnim);
 
-        // 2. Crossfade Content Storyboard
-        var fadeOutExpanded = new DoubleAnimation(ExpandedContentGrid.Opacity, 0, TimeSpan.FromMilliseconds(110))
-        {
-            EasingFunction = ease
-        };
-        fadeOutExpanded.Completed += (_, _) => ExpandedContentGrid.Visibility = Visibility.Collapsed;
+        // 3. Smooth Crossfade Content
+        var fadeOutExpanded = new DoubleAnimation(ExpandedContentGrid.Opacity, 0, TimeSpan.FromMilliseconds(120)) { EasingFunction = ease };
         ExpandedContentGrid.BeginAnimation(OpacityProperty, fadeOutExpanded);
 
-        CompactContentGrid.Visibility = Visibility.Visible;
-        var fadeInCompact = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(160))
+        var fadeInCompact = new DoubleAnimation(CompactContentGrid.Opacity, 1, TimeSpan.FromMilliseconds(170))
         {
             BeginTime = TimeSpan.FromMilliseconds(50),
             EasingFunction = ease
         };
         CompactContentGrid.BeginAnimation(OpacityProperty, fadeInCompact);
+    }
+
+    private void ApplyInstantDimensions(double targetWidth, double targetHeight, double targetLeft, double targetTop, bool isExpanded)
+    {
+        BeginAnimation(WidthProperty, null);
+        BeginAnimation(LeftProperty, null);
+        BeginAnimation(HeightProperty, null);
+
+        CompactContentGrid.BeginAnimation(OpacityProperty, null);
+        ExpandedContentGrid.BeginAnimation(OpacityProperty, null);
+
+        Width = targetWidth;
+        Left = targetLeft;
+        Height = targetHeight;
+        Top = targetTop;
+
+        if (isExpanded)
+        {
+            CompactContentGrid.Visibility = Visibility.Collapsed;
+            CompactContentGrid.Opacity = 0;
+            ExpandedContentGrid.Visibility = Visibility.Visible;
+            ExpandedContentGrid.Opacity = 1;
+        }
+        else
+        {
+            ExpandedContentGrid.Visibility = Visibility.Collapsed;
+            ExpandedContentGrid.Opacity = 0;
+            CompactContentGrid.Visibility = Visibility.Visible;
+            CompactContentGrid.Opacity = 1;
+        }
     }
 
     private void InstallMouseHook()
@@ -355,5 +371,61 @@ public partial class NotchWindow : NonActivatingWindow
         }
 
         return User32.CallNextHookEx(_mouseHookHandle, nCode, wParam, lParam);
+    }
+
+    private void OnSubmitWifiPasswordClicked(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button btn && btn.Tag is WifiNetworkItem item)
+        {
+            DependencyObject? current = btn;
+            while (current != null && current is not Border && current is not Grid)
+            {
+                current = VisualTreeHelper.GetParent(current) ?? LogicalTreeHelper.GetParent(current);
+            }
+
+            string password = string.Empty;
+            if (current != null)
+            {
+                var pBox = FindChild<PasswordBox>(current);
+                if (pBox != null) password = pBox.Password;
+            }
+
+            _viewModel.SubmitWifiPasswordCommand.Execute(Tuple.Create(item, password));
+        }
+    }
+
+    private void OnWifiPasswordKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter && sender is PasswordBox pBox && pBox.Tag is WifiNetworkItem item)
+        {
+            string password = pBox.Password ?? string.Empty;
+            _viewModel.SubmitWifiPasswordCommand.Execute(Tuple.Create(item, password));
+        }
+    }
+
+    private static T? FindChild<T>(DependencyObject parent) where T : DependencyObject
+    {
+        if (parent == null) return null;
+        if (parent is Panel panel)
+        {
+            foreach (var child in panel.Children)
+            {
+                if (child is T match) return match;
+                if (child is DependencyObject dep)
+                {
+                    var found = FindChild<T>(dep);
+                    if (found != null) return found;
+                }
+            }
+        }
+        int count = VisualTreeHelper.GetChildrenCount(parent);
+        for (int i = 0; i < count; i++)
+        {
+            var child = VisualTreeHelper.GetChild(parent, i);
+            if (child is T match) return match;
+            var found = FindChild<T>(child);
+            if (found != null) return found;
+        }
+        return null;
     }
 }
